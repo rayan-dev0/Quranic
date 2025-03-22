@@ -4,8 +4,15 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navigation } from '@/components/Navigation'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+import dynamic from 'next/dynamic'
 
 const inter = Inter({ subsets: ["latin"] });
+
+// Import client component with no SSR
+const PageTransitionProvider = dynamic(
+  () => import('@/contexts/PageTransitionContext').then(mod => mod.PageTransitionProvider),
+  { ssr: false }
+)
 
 export const metadata: Metadata = {
   title: "Quran App - Read, Learn, and Reflect",

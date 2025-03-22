@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { QuranPage } from '@/components/QuranPage'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Search, ChevronLeft, ChevronRight, Bookmark, Share2, Settings, Home, Info, BookOpen, Minus, Plus } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Bookmark, Share2, Settings, Home, Info, BookOpen, Minus, Plus, Volume2, VolumeX, Play, Pause } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/contexts/LanguageContext'
 import Link from 'next/link'
+import { QuranAudioPlayer } from '@/components/QuranAudioPlayer'
 
 const pageTransitionVariants = {
   enter: (direction: number) => ({
@@ -36,12 +37,16 @@ export default function MushafPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [pageZoom, setPageZoom] = useState(100)
   const [isScrollMode, setIsScrollMode] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const sidebarRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
-  const { currentLanguage } = useLanguage()
   const [isLoading, setIsLoading] = useState(false)
   const [showControls, setShowControls] = useState(true)
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  const [showAudioPlayer, setShowAudioPlayer] = useState(false)
+  const [highlightedWordIndex, setHighlightedWordIndex] = useState<number | null>(null)
+  const [currentVerseKey, setCurrentVerseKey] = useState<string>('')
+  const [wordSegments, setWordSegments] = useState<number[][]>([])
+  
+  const router = useRouter()
+  const { currentLanguage } = useLanguage()
 
   // Hide controls when not moving mouse for a while
   useEffect(() => {
@@ -70,20 +75,6 @@ export default function MushafPage() {
     };
   }, []);
 
-  // Close sidebar when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-        setIsSidebarOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   // Load bookmarked page from localStorage on mount
   useEffect(() => {
     const savedPage = localStorage.getItem('bookmarkedPage')
@@ -102,6 +93,29 @@ export default function MushafPage() {
       setIsScrollMode(savedScrollMode === 'true')
     }
   }, [currentPage])
+
+  // Get the first verse key on the page for audio playback
+  useEffect(() => {
+    // In a real implementation, you would fetch this from an API
+    // For now, we'll use a simple mapping (just for demo purposes)
+    if (currentPage > 0) {
+      // Format: surah:verse
+      const verseKey = `${Math.ceil(currentPage / 20) + 1}:1`;
+      setCurrentVerseKey(verseKey);
+    }
+  }, [currentPage]);
+
+  const handleWordChange = (wordIndex: number) => {
+    setHighlightedWordIndex(wordIndex);
+  };
+
+  const handleLoadSegments = (segments: number[][]) => {
+    setWordSegments(segments);
+  };
+
+  const toggleAudioPlayer = () => {
+    setShowAudioPlayer(!showAudioPlayer);
+  };
 
   const handlePageSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -164,102 +178,19 @@ export default function MushafPage() {
     localStorage.setItem('isScrollMode', newValue.toString());
   }
 
+  const toggleAudio = async () => {
+    // This function is no longer needed since we're using QuranAudioPlayer
+    // Just toggle the audio player visibility
+    toggleAudioPlayer();
+  };
+
   return (
     <div className="relative min-h-screen bg-[#0A1020] overflow-hidden">
-      {/* Sidebar */}
-      <div 
-        ref={sidebarRef}
-        className={`fixed top-16 ${currentLanguage.direction === 'rtl' ? 'right-0' : 'left-0'} h-full w-72 bg-[#0F172A] shadow-lg z-50 transition-transform duration-300 transform ${
-          isSidebarOpen 
-            ? 'translate-x-0' 
-            : currentLanguage.direction === 'rtl' 
-              ? 'translate-x-full' 
-              : '-translate-x-full'
-        }`}
-      >
-        <div className="p-4">
-          <h2 className="text-xl font-semibold text-gray-100 mb-6">
-            {currentLanguage.direction === 'rtl' ? 'القائمة' : 'Menu'}
-          </h2>
-          
-          <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-3 text-gray-300 hover:text-white p-2 rounded-md hover:bg-[#1E293B] transition-colors">
-              <Home className="h-5 w-5" />
-              <span>{currentLanguage.direction === 'rtl' ? 'الرئيسية' : 'Home'}</span>
-            </Link>
-            
-            <Link href="/about" className="flex items-center gap-3 text-gray-300 hover:text-white p-2 rounded-md hover:bg-[#1E293B] transition-colors">
-              <Info className="h-5 w-5" />
-              <span>{currentLanguage.direction === 'rtl' ? 'حول التطبيق' : 'About'}</span>
-            </Link>
-            
-            <Link href="/surah/1" className="flex items-center gap-3 text-gray-300 hover:text-white p-2 rounded-md hover:bg-[#1E293B] transition-colors">
-              <BookOpen className="h-5 w-5" />
-              <span>{currentLanguage.direction === 'rtl' ? 'قراءة مع الترجمة' : 'Read with Translation'}</span>
-            </Link>
-            
-            <hr className="border-gray-700 my-4" />
-            
-            <button 
-              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className="flex items-center gap-3 text-gray-300 hover:text-white p-2 rounded-md hover:bg-[#1E293B] transition-colors w-full"
-            >
-              <Settings className="h-5 w-5" />
-              <span>{currentLanguage.direction === 'rtl' ? 'الإعدادات' : 'Settings'}</span>
-            </button>
-            
-            {isSettingsOpen && (
-              <div className="ml-8 space-y-4 mt-2">
-                <div className="space-y-2">
-                  <p className="text-gray-400 text-sm">
-                    {currentLanguage.direction === 'rtl' ? 'حجم الصفحة' : 'Page Size'}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={() => changeZoom(-10)}
-                      className="h-8 w-8 text-gray-400"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <div className="text-gray-300 text-sm w-12 text-center">{pageZoom}%</div>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={() => changeZoom(10)}
-                      className="h-8 w-8 text-gray-400"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      id="scrollMode"
-                      checked={isScrollMode}
-                      onChange={toggleScrollMode}
-                      className="rounded text-blue-500 focus:ring-blue-500"
-                    />
-                    <label htmlFor="scrollMode" className="text-gray-300 text-sm cursor-pointer">
-                      {currentLanguage.direction === 'rtl' ? 'وضع التمرير' : 'Scroll Mode'}
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      
       {/* Main Content */}
       <div className="relative">
         {/* Top Navigation - visible on hover or tap */}
         <motion.div 
-          className={`fixed top-16 left-0 right-0 z-40 bg-[#0A1020]/90 backdrop-blur-sm border-b border-gray-800 transition-opacity duration-300 ${
+          className={`fixed top-0 left-0 right-0 z-40 bg-[#0A1020]/90 backdrop-blur-sm border-b border-gray-800 transition-opacity duration-300 ${
             showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
           initial={{ opacity: 0, y: -20 }}
@@ -269,20 +200,7 @@ export default function MushafPage() {
           <div className="container mx-auto px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-2 sm:gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="text-gray-300 hover:text-white hover:bg-[#1E293B]"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                  </svg>
-                </Button>
-                
-                <span className="hidden sm:inline-block text-gray-200 font-medium">
+                <span className="text-gray-200 font-medium">
                   {currentLanguage.direction === 'rtl' ? 'المصحف الشريف' : 'Quran Mushaf'}
                 </span>
               </div>
@@ -334,6 +252,18 @@ export default function MushafPage() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={toggleAudioPlayer}
+                  className={cn(
+                    "transition-colors",
+                    showAudioPlayer ? "text-green-500" : "text-gray-300 hover:text-green-500 hover:bg-[#1E293B]"
+                  )}
+                >
+                  <Volume2 className="h-5 w-5" />
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={toggleBookmark}
                   className={cn(
                     "transition-colors",
@@ -351,8 +281,76 @@ export default function MushafPage() {
                 >
                   <Share2 className="h-5 w-5" />
                 </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                  className="text-gray-300 hover:text-white hover:bg-[#1E293B]"
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
               </div>
             </div>
+            
+            {/* Settings Panel (inline) */}
+            {isSettingsOpen && (
+              <div className="mt-3 p-3 bg-[#1E293B] rounded-md border border-gray-700">
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="space-y-1">
+                    <p className="text-gray-400 text-sm">
+                      {currentLanguage.direction === 'rtl' ? 'حجم الصفحة' : 'Page Size'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => changeZoom(-10)}
+                        className="h-7 w-7 text-gray-400"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <div className="text-gray-300 text-sm w-10 text-center">{pageZoom}%</div>
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => changeZoom(10)}
+                        className="h-7 w-7 text-gray-400"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        id="scrollMode"
+                        checked={isScrollMode}
+                        onChange={toggleScrollMode}
+                        className="rounded text-blue-500 focus:ring-blue-500"
+                      />
+                      <label htmlFor="scrollMode" className="text-gray-300 text-sm cursor-pointer">
+                        {currentLanguage.direction === 'rtl' ? 'وضع التمرير' : 'Scroll Mode'}
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="ml-auto">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => router.push('/')}
+                      className="text-gray-300 hover:text-white hover:bg-[#0F172A]"
+                    >
+                      <Home className="h-4 w-4 mr-2" />
+                      {currentLanguage.direction === 'rtl' ? 'الرئيسية' : 'Home'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -383,10 +381,30 @@ export default function MushafPage() {
                 pageNumber={currentPage}
                 onPageChange={handlePageChange}
                 isLoading={isLoading}
+                highlightedWordIndex={highlightedWordIndex}
               />
             </motion.div>
           </AnimatePresence>
         </div>
+        
+        {/* Audio Player (visible when toggled) */}
+        {showAudioPlayer && currentVerseKey && (
+          <motion.div 
+            className={`fixed bottom-16 left-0 right-0 z-40 bg-[#0F172A]/95 backdrop-blur-md border-t border-gray-800 transition-opacity duration-300 ${
+              showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: showControls ? 1 : 0, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <QuranAudioPlayer
+              pageNumber={currentPage}
+              verseKey={currentVerseKey}
+              onWordChange={handleWordChange}
+              onLoadSegments={handleLoadSegments}
+            />
+          </motion.div>
+        )}
         
         {/* Bottom Navigation - Mobile Only */}
         <motion.div 

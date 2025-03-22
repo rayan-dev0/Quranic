@@ -10,6 +10,7 @@ interface QuranPageProps {
   pageNumber: number
   onPageChange: (newPage: number) => void
   isLoading?: boolean
+  highlightedWordIndex?: number | null
 }
 
 interface VerseData {
@@ -23,10 +24,12 @@ interface VerseData {
 export const QuranPage: React.FC<QuranPageProps> = ({
   pageNumber,
   onPageChange,
-  isLoading = false
+  isLoading = false,
+  highlightedWordIndex = null
 }) => {
   const [mounted, setMounted] = useState(false)
   const [pageData, setPageData] = useState<VerseData[]>([])
+  const [verseWords, setVerseWords] = useState<string[][]>([])
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Handle keyboard navigation
@@ -53,6 +56,12 @@ export const QuranPage: React.FC<QuranPageProps> = ({
       const response = await fetch(`https://api.quran.com/api/v4/quran/verses/uthmani?page_number=${pageNumber}`)
       const data = await response.json()
       setPageData(data.verses)
+
+      // Split text into words for highlighting
+      const words = data.verses.map((verse: VerseData) => 
+        verse.text_uthmani.split(' ').filter((word: string) => word.trim().length > 0)
+      )
+      setVerseWords(words)
     } catch (error) {
       console.error('Error fetching page data:', error)
     }
@@ -125,17 +134,40 @@ export const QuranPage: React.FC<QuranPageProps> = ({
               direction: 'rtl'
             }}
           >
-            {pageData.map((verse, index) => (
-              <span 
-                key={verse.id}
-                className="font-arabic text-right inline leading-[2.7] text-[22px] sm:text-[26px] md:text-[28px] text-gray-900 dark:text-gray-200"
-              >
-                {verse.text_uthmani}{' '}
-                <span className="inline-block mx-1 text-[0.7em] text-gray-500 font-normal align-top">
-                  ﴿{verse.verse_key.split(':')[1]}﴾
-                </span>
-              </span>
-            ))}
+            {pageData.length === 0 ? (
+              // Loading skeleton
+              <div className="animate-pulse space-y-3">
+                {Array.from({ length: 15 }).map((_, i) => (
+                  <div key={i} className="h-7 bg-gray-300 dark:bg-gray-700 rounded w-full" />
+                ))}
+              </div>
+            ) : (
+              verseWords.map((words, verseIndex) => (
+                <div key={`verse-${pageData[verseIndex].id}`} className="mb-2">
+                  {words.map((word, wordIndex) => {
+                    // Calculate global word index (simplified for demo)
+                    // In a real implementation, you would get actual word indices from the API
+                    const globalWordIndex = verseIndex * 20 + wordIndex; // Assuming average 20 words per verse
+                    
+                    return (
+                      <span 
+                        key={`word-${verseIndex}-${wordIndex}`}
+                        className={`font-arabic text-right inline leading-[2.7] text-[22px] sm:text-[26px] md:text-[28px] ${
+                          highlightedWordIndex === globalWordIndex
+                            ? 'text-primary bg-primary/10 rounded px-1'
+                            : 'text-gray-900 dark:text-gray-200'
+                        }`}
+                      >
+                        {word}{' '}
+                      </span>
+                    );
+                  })}
+                  <span className="inline-block mx-1 text-[0.7em] text-gray-500 font-normal align-top">
+                    ﴿{pageData[verseIndex].verse_key.split(':')[1]}﴾
+                  </span>
+                </div>
+              ))
+            )}
           </div>
           
           {/* Decorative footer */}
