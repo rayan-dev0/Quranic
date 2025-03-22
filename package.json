@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "cf-pages": "npx @cloudflare/next-on-pages",
     "format": "prettier --write .",
     "type-check": "tsc --noEmit"
   },
@@ -32,6 +33,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.10",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
