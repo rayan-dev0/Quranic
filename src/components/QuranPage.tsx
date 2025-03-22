@@ -11,6 +11,9 @@ interface QuranPageProps {
   onPageChange: (newPage: number) => void
   isLoading?: boolean
   highlightedWordIndex?: number | null
+  verses?: any[]
+  wordMap?: {[verseKey: string]: any[]}
+  currentVerseKey?: string
 }
 
 interface VerseData {
@@ -25,12 +28,30 @@ export const QuranPage: React.FC<QuranPageProps> = ({
   pageNumber,
   onPageChange,
   isLoading = false,
-  highlightedWordIndex = null
+  highlightedWordIndex = null,
+  verses = [],
+  wordMap = {},
+  currentVerseKey = ''
 }) => {
   const [mounted, setMounted] = useState(false)
   const [pageData, setPageData] = useState<VerseData[]>([])
   const [verseWords, setVerseWords] = useState<string[][]>([])
   const containerRef = useRef<HTMLDivElement>(null)
+  
+  // Use passed verses if available, otherwise fetch them
+  useEffect(() => {
+    if (verses && verses.length > 0) {
+      setPageData(verses)
+      
+      // Split text into words for highlighting
+      const words = verses.map((verse: VerseData) => 
+        verse.text_uthmani.split(' ').filter((word: string) => word.trim().length > 0)
+      )
+      setVerseWords(words)
+    } else {
+      fetchPageData()
+    }
+  }, [pageNumber, verses])
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -48,8 +69,7 @@ export const QuranPage: React.FC<QuranPageProps> = ({
 
   useEffect(() => {
     setMounted(true)
-    fetchPageData()
-  }, [pageNumber])
+  }, [])
 
   const fetchPageData = async () => {
     try {
@@ -110,6 +130,23 @@ export const QuranPage: React.FC<QuranPageProps> = ({
     }
   }, [pageNumber, onPageChange])
 
+  // Helper function to determine if a word should be highlighted
+  const shouldHighlightWord = (verseKey: string, wordIndex: number): boolean => {
+    if (!currentVerseKey || !highlightedWordIndex) return false
+    
+    // Only highlight words in the current verse
+    if (verseKey !== currentVerseKey) return false
+    
+    // If we have a detailed word map, use it for more accurate highlighting
+    if (wordMap && wordMap[verseKey] && wordMap[verseKey].length > 0) {
+      const globalWordIndex = wordMap[verseKey].findIndex((w, idx) => idx === wordIndex)
+      return globalWordIndex === highlightedWordIndex
+    }
+    
+    // Fallback to simple index-based highlighting
+    return wordIndex === highlightedWordIndex
+  }
+
   if (!mounted) {
     return null
   }
@@ -145,17 +182,21 @@ export const QuranPage: React.FC<QuranPageProps> = ({
               verseWords.map((words, verseIndex) => (
                 <div key={`verse-${pageData[verseIndex].id}`} className="mb-2">
                   {words.map((word, wordIndex) => {
-                    // Calculate global word index (simplified for demo)
-                    // In a real implementation, you would get actual word indices from the API
-                    const globalWordIndex = verseIndex * 20 + wordIndex; // Assuming average 20 words per verse
+                    // Determine if this word should be highlighted
+                    const isHighlighted = shouldHighlightWord(pageData[verseIndex].verse_key, wordIndex);
+                    
+                    // Add visual cue for the current verse
+                    const isCurrentVerse = pageData[verseIndex].verse_key === currentVerseKey;
                     
                     return (
                       <span 
                         key={`word-${verseIndex}-${wordIndex}`}
                         className={`font-arabic text-right inline leading-[2.7] text-[22px] sm:text-[26px] md:text-[28px] ${
-                          highlightedWordIndex === globalWordIndex
-                            ? 'text-primary bg-primary/10 rounded px-1'
-                            : 'text-gray-900 dark:text-gray-200'
+                          isHighlighted
+                            ? 'text-primary bg-primary/20 rounded px-1'
+                            : isCurrentVerse 
+                              ? 'text-gray-900 dark:text-gray-100'
+                              : 'text-gray-900 dark:text-gray-200'
                         }`}
                       >
                         {word}{' '}

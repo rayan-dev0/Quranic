@@ -182,6 +182,30 @@ export const getCurrentJuz = async (surahNumber: number, verseNumber: number): P
   }
 };
 
+export const getVersesByPage = async (pageNumber: number): Promise<Verse[]> => {
+  try {
+    const response = await fetch(`https://api.quran.com/api/v4/quran/verses/uthmani?page_number=${pageNumber}`);
+    if (!response.ok) throw new Error('Failed to fetch verses for page');
+    
+    const data = await response.json();
+    return data.verses.map((verse: any) => ({
+      id: verse.id,
+      verse_number: verse.verse_number,
+      verse_key: verse.verse_key,
+      juz_number: verse.juz_number || 0,
+      hizb_number: verse.hizb_number || 0,
+      rub_number: verse.rub_number || 0,
+      sajdah_type: verse.sajdah_type,
+      text_uthmani: verse.text_uthmani,
+      page_number: verse.page_number,
+      translations: []
+    }));
+  } catch (error) {
+    console.error('Error fetching verses by page:', error);
+    throw error;
+  }
+};
+
 export const getJuzData = async (juzNumber: number): Promise<Juz> => {
   try {
     const response = await fetch(`${API_BASE_URL}/juz/${juzNumber}/quran-uthmani`);
@@ -227,11 +251,9 @@ export const getVerseAudio = async (verseKey: string, reciterId: string = DEFAUL
       `https://the-quran-project.github.io/Quran-Audio/Data/${reciterId}/${surahNumber}_${verseNumber}.mp3`,
       // Fallback source - CloudFlare Pages (for first 3 reciters)
       reciterId <= '3' ? `https://quranaudio.pages.dev/${reciterId}/${surahNumber}_${verseNumber}.mp3` : null,
-      // Original mp3quran.net URLs based on reciter
-      reciterId === '1' ? `https://server8.mp3quran.net/afs/${surahNumber.toString().padStart(3, '0')}.mp3` :
-      reciterId === '2' ? `https://server11.mp3quran.net/shatri/${surahNumber.toString().padStart(3, '0')}.mp3` :
-      reciterId === '3' ? `https://server6.mp3quran.net/qtm/${surahNumber.toString().padStart(3, '0')}.mp3` :
-      `https://server11.mp3quran.net/yasser/${surahNumber.toString().padStart(3, '0')}.mp3`
+      // Alternative sources
+      `https://verses.quran.com/${surahNumber}/${verseNumber}.mp3`,
+      `https://audio.qurancdn.com/${reciterId}/${surahNumber}/${verseNumber}.mp3`
     ].filter(Boolean) as string[];
 
     // Try each URL until one works
@@ -247,10 +269,12 @@ export const getVerseAudio = async (verseKey: string, reciterId: string = DEFAUL
       }
     }
 
-    throw new Error('No available audio source found');
+    // If all fail, return the primary URL anyway
+    return `https://the-quran-project.github.io/Quran-Audio/Data/${reciterId}/${surahNumber}_${verseNumber}.mp3`;
   } catch (error) {
     console.error('Error getting verse audio:', error);
-    throw error;
+    // Return a best-effort URL even if there's an error
+    return `https://the-quran-project.github.io/Quran-Audio/Data/${reciterId}/${surahNumber}_${verseNumber}.mp3`;
   }
 };
 

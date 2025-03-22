@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { getSurahs, Chapter } from '@/lib/quran-api'
-import { Search, Book, BookOpen, Bookmark, Star } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { cn } from '@/lib/utils'
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getSurahs, Chapter } from "@/lib/quran-api";
+import { Search, Book, BookOpen, Bookmark, Star } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 // Add these Aceternity-inspired components
 interface TextGradientProps {
@@ -15,22 +15,30 @@ interface TextGradientProps {
 }
 
 const TextGradient = ({ children, className }: TextGradientProps) => (
-  <span className={cn("bg-gradient-to-r from-primary via-blue-400 to-primary/80 bg-clip-text text-transparent", className)}>
+  <span
+    className={cn(
+      "bg-gradient-to-r from-primary via-blue-400 to-primary/80 bg-clip-text text-transparent",
+      className
+    )}
+  >
     {children}
   </span>
-)
+);
 
 interface BackgroundGradientProps {
   children: React.ReactNode;
   className?: string;
 }
 
-const BackgroundGradient = ({ children, className }: BackgroundGradientProps) => (
+const BackgroundGradient = ({
+  children,
+  className,
+}: BackgroundGradientProps) => (
   <div className={cn("relative group", className)}>
     <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-primary rounded-xl blur opacity-30 group-hover:opacity-70 transition duration-1000 group-hover:duration-300"></div>
     {children}
   </div>
-)
+);
 
 // Feature card component with hover effects
 interface FeatureCardProps {
@@ -40,7 +48,7 @@ interface FeatureCardProps {
 }
 
 const FeatureCard = ({ icon, title, description }: FeatureCardProps) => (
-  <motion.div 
+  <motion.div
     className="relative overflow-hidden rounded-xl bg-[#111827]/60 backdrop-blur-md border border-white/5 p-8"
     whileHover={{ y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)" }}
     transition={{ duration: 0.3 }}
@@ -54,7 +62,7 @@ const FeatureCard = ({ icon, title, description }: FeatureCardProps) => (
       <p className="text-lg text-gray-400">{description}</p>
     </div>
   </motion.div>
-)
+);
 
 const IslamicPattern = () => (
   <div className="absolute inset-0 -z-10 h-full w-full opacity-40">
@@ -72,18 +80,26 @@ const IslamicPattern = () => (
           <path d="M.5 40V.5H40" fill="none" />
           <path d="M40 40V.5H.5" fill="none" />
           <circle cx="20" cy="20" r="16" fill="none" />
-          <path d="M20 4a16 16 0 0 1 16 16M4 20a16 16 0 0 1 16-16M20 36A16 16 0 0 1 4 20m32 0a16 16 0 0 1-16 16" fill="none" />
+          <path
+            d="M20 4a16 16 0 0 1 16 16M4 20a16 16 0 0 1 16-16M20 36A16 16 0 0 1 4 20m32 0a16 16 0 0 1-16 16"
+            fill="none"
+          />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" strokeWidth="0" fill="url(#islamic-pattern)" />
+      <rect
+        width="100%"
+        height="100%"
+        strokeWidth="0"
+        fill="url(#islamic-pattern)"
+      />
     </svg>
-    
+
     {/* Aceternity-style animated blobs */}
     <div className="absolute top-0 -left-4 w-96 h-96 bg-primary/20 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
     <div className="absolute top-0 -right-4 w-96 h-96 bg-blue-600/20 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
     <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
   </div>
-)
+);
 
 // Shimmering divider
 const ShimmeringDivider = () => (
@@ -94,46 +110,49 @@ const ShimmeringDivider = () => (
 );
 
 export default function Home() {
-  const router = useRouter()
-  const [surahs, setSurahs] = useState<Chapter[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const router = useRouter();
+  const [surahs, setSurahs] = useState<Chapter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchSurahs = async () => {
       try {
-        const data = await getSurahs()
-        setSurahs(data)
+        const data = await getSurahs();
+        setSurahs(data);
       } catch (error) {
-        console.error('Error fetching surahs:', error)
+        console.error("Error fetching surahs:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchSurahs()
-  }, [])
+    fetchSurahs();
+  }, []);
 
-  const filteredSurahs = surahs.filter(surah =>
-    surah.name_simple.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    surah.translated_name.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredSurahs = surahs.filter(
+    (surah) =>
+      surah.name_simple.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      surah.translated_name.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+  );
 
   const handleCardClick = (surahId: number) => {
-    setSelectedId(surahId)
+    setSelectedId(surahId);
     // Delay navigation to allow animation to play
     setTimeout(() => {
-      router.push(`/surah/${surahId}`)
-    }, 300)
-  }
+      router.push(`/surah/${surahId}`);
+    }, 300);
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0A1020]">
       <IslamicPattern />
-      
+
       <main className="container relative px-4">
-        <motion.div 
+        <motion.div
           className="py-16 sm:py-24 flex flex-col items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -149,11 +168,11 @@ export default function Home() {
               <motion.div
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
-                transition={{ 
+                transition={{
                   duration: 0.5,
                   type: "spring",
                   stiffness: 200,
-                  damping: 20
+                  damping: 20,
                 }}
                 className="relative mx-auto h-28 w-28 mb-8"
               >
@@ -164,7 +183,7 @@ export default function Home() {
                 </div>
                 <div className="absolute -inset-3 rounded-full border border-primary/20 animate-ping-slow"></div>
               </motion.div>
-              
+
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -173,17 +192,18 @@ export default function Home() {
               >
                 <TextGradient className="">Enlighten Your Spirit</TextGradient>
               </motion.h1>
-              
+
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
                 className="text-lg leading-8 text-gray-300/80 mb-8"
               >
-                Immerse yourself in the divine words of the Quran with our beautifully crafted 
-                reading experience. Discover deep insights through translations and reflections.
+                Immerse yourself in the divine words of the Quran with our
+                beautifully crafted reading experience. Discover deep insights
+                through translations and reflections.
               </motion.p>
-              
+
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -226,22 +246,26 @@ export default function Home() {
                     key={surah.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={selectedId === surah.id ? {
-                      position: 'fixed',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      zIndex: 50,
-                      scale: 1.1,
-                      opacity: 0,
-                    } : { opacity: 0 }}
-                    transition={{ 
-                      delay: 0.05 * index, 
+                    exit={
+                      selectedId === surah.id
+                        ? {
+                            position: "fixed",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 50,
+                            scale: 1.1,
+                            opacity: 0,
+                          }
+                        : { opacity: 0 }
+                    }
+                    transition={{
+                      delay: 0.05 * index,
                       duration: 0.5,
                       type: "spring",
                       stiffness: 200,
-                      damping: 25
+                      damping: 25,
                     }}
                     layoutId={`surah-card-${surah.id}`}
                     className="min-h-[220px] flex"
@@ -253,7 +277,7 @@ export default function Home() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <motion.div 
+                        <motion.div
                           className="absolute top-3 right-5 text-5xl font-arabic text-primary/10 group-hover:text-primary/20 transition-colors duration-300"
                           layoutId={`surah-arabic-${surah.id}`}
                         >
@@ -261,21 +285,21 @@ export default function Home() {
                         </motion.div>
                         <div className="relative p-6 flex flex-col flex-1">
                           <div className="flex items-center gap-5">
-                            <motion.div 
+                            <motion.div
                               className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-blue-400 text-lg font-medium group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-colors duration-300"
-                              style={{ fontVariantNumeric: 'tabular-nums' }}
+                              style={{ fontVariantNumeric: "tabular-nums" }}
                               layoutId={`surah-number-${surah.id}`}
                             >
                               {surah.id}
                             </motion.div>
                             <div className="min-w-0">
-                              <motion.h3 
+                              <motion.h3
                                 className="truncate text-2xl font-medium text-gray-100"
                                 layoutId={`surah-title-${surah.id}`}
                               >
                                 {surah.name_simple}
                               </motion.h3>
-                              <motion.p 
+                              <motion.p
                                 className="truncate text-lg text-primary/70 group-hover:text-primary/90 transition-colors duration-300"
                                 layoutId={`surah-translation-${surah.id}`}
                               >
@@ -283,7 +307,7 @@ export default function Home() {
                               </motion.p>
                             </div>
                           </div>
-                          <motion.div 
+                          <motion.div
                             className="mt-auto pt-6 flex items-center gap-x-6 text-sm text-gray-400"
                             layoutId={`surah-meta-${surah.id}`}
                           >
@@ -307,5 +331,5 @@ export default function Home() {
         <ShimmeringDivider />
       </main>
     </div>
-  )
+  );
 }
