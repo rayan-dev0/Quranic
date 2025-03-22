@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Book, BookOpen, Search as SearchIcon, Home } from 'lucide-react'
+import { Menu, X, Book, BookOpen, Search as SearchIcon, Home, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Search } from '@/components/Search'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -22,6 +22,7 @@ export function Navigation() {
   const navItems = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/mushaf', label: 'Mushaf View', icon: BookOpen },
+    { href: '/dua', label: 'Dua & Dhikr', icon: Heart },
   ]
 
   const isActive = (path: string) => {

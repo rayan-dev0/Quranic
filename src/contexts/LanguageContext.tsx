@@ -1,61 +1,46 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useState, useContext, ReactNode } from 'react'
 
-export type Language = {
+interface Language {
   id: string
   name: string
-  nativeName: string
   direction: 'ltr' | 'rtl'
 }
 
-export const LANGUAGES: Language[] = [
-  { id: 'en', name: 'English', nativeName: 'English', direction: 'ltr' },
-  { id: 'ar', name: 'Arabic', nativeName: 'العربية', direction: 'rtl' },
-  { id: 'ur', name: 'Urdu', nativeName: 'اردو', direction: 'rtl' },
-  { id: 'fr', name: 'French', nativeName: 'Français', direction: 'ltr' },
-  { id: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', direction: 'ltr' },
-  { id: 'tr', name: 'Turkish', nativeName: 'Türkçe', direction: 'ltr' },
-]
-
-type LanguageContextType = {
+interface LanguageContextType {
   currentLanguage: Language
-  setLanguage: (language: Language) => void
-  languages: Language[]
+  setLanguage: (languageId: string) => void
+  availableLanguages: Language[]
 }
+
+const languages: Language[] = [
+  { id: 'en', name: 'English', direction: 'ltr' },
+  { id: 'ar', name: 'العربية', direction: 'rtl' }
+]
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>(() => {
-    // Try to get the language from localStorage, fallback to English
-    if (typeof window !== 'undefined') {
-      const savedLanguage = localStorage.getItem('selectedLanguage')
-      if (savedLanguage) {
-        const language = LANGUAGES.find(lang => lang.id === savedLanguage)
-        if (language) return language
-      }
+  const [currentLanguage, setCurrentLanguage] = useState<Language>(languages[0])
+
+  const setLanguage = (languageId: string) => {
+    const language = languages.find(lang => lang.id === languageId)
+    if (language) {
+      setCurrentLanguage(language)
+      document.documentElement.dir = language.direction
+      document.documentElement.lang = language.id
     }
-    return LANGUAGES[0]
-  })
-
-  useEffect(() => {
-    // Save language preference to localStorage
-    localStorage.setItem('selectedLanguage', currentLanguage.id)
-    // Update document direction
-    document.documentElement.dir = currentLanguage.direction
-    // Add language class to document for potential CSS overrides
-    document.documentElement.lang = currentLanguage.id
-  }, [currentLanguage])
-
-  const value = {
-    currentLanguage,
-    setLanguage: setCurrentLanguage,
-    languages: LANGUAGES,
   }
 
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider
+      value={{
+        currentLanguage,
+        setLanguage,
+        availableLanguages: languages
+      }}
+    >
       {children}
     </LanguageContext.Provider>
   )
