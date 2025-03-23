@@ -51,7 +51,7 @@ export function Navigation() {
             </Button>
             <Link href="/" className="flex items-center gap-2">
               <h1 className="text-xl font-semibold text-gray-100">
-                Quran App
+                Quranic
               </h1>
             </Link>
           </div>

@@ -15,9 +15,9 @@ const PageTransitionProvider = dynamic(
 )
 
 export const metadata: Metadata = {
-  title: "Quran App - Read, Learn, and Reflect",
-  description: "A modern Quran reading experience with translations, audio, and more",
-  keywords: "quran, islam, muslim, holy book, arabic, translation",
+  title: "Quranic - Read, Learn, and Reflect",
+  description: "A modern Quranic reading experience with translations, audio, and more",
+  keywords: "quran, quranic, islam, muslim, holy book, arabic, translation",
   authors: [{ name: "Your Name" }],
 };
 

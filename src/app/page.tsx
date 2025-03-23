@@ -190,7 +190,7 @@ export default function Home() {
                 transition={{ delay: 0.2, duration: 0.8 }}
                 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6"
               >
-                <TextGradient className="">Enlighten Your Spirit</TextGradient>
+                <TextGradient className="">Welcome to Quranic</TextGradient>
               </motion.h1>
 
               <motion.p
@@ -199,9 +199,7 @@ export default function Home() {
                 transition={{ delay: 0.4, duration: 0.8 }}
                 className="text-lg leading-8 text-gray-300/80 mb-8"
               >
-                Immerse yourself in the divine words of the Quran with our
-                beautifully crafted reading experience. Discover deep insights
-                through translations and reflections.
+                Experience the divine words of the Quran with Quranic's beautifully crafted reading experience. Discover deep insights through translations and reflections.
               </motion.p>
 
               <motion.div

@@ -1,4 +1,4 @@
-# Quran App
+# Quranic
 
 A modern Quran reading experience built with Next.js 14, featuring beautiful UI, audio recitations, translations, and more.
 
@@ -34,8 +34,8 @@ A modern Quran reading experience built with Next.js 14, featuring beautiful UI,
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/quran-app.git
-cd quran-app
+git clone https://github.com/yourusername/quranic-app.git
+cd quranic-app
 ```
 
 2. Install dependencies:
