@@ -146,17 +146,43 @@ export async function getAzkar(): Promise<Zikr[]> {
   }
 }
 
+// Debug function to check what's actually being returned
+function logDataStructure(data: any, label: string) {
+  try {
+    console.log(`${label} structure:`, {
+      type: typeof data,
+      isArray: Array.isArray(data),
+      length: Array.isArray(data) ? data.length : 'N/A',
+      keys: typeof data === 'object' && data !== null ? Object.keys(data) : 'N/A',
+      sample: Array.isArray(data) && data.length > 0 ? data[0] : 'N/A'
+    });
+  } catch (e) {
+    console.error(`Error logging ${label}:`, e);
+  }
+}
+
 export async function getCategories(language: string = 'en'): Promise<Category[]> {
   try {
-    return (duaData as DuaData).categories.map(category => ({
+    const data = duaData as DuaData;
+    
+    // Debug the data structure
+    logDataStructure(data, 'duaData');
+    logDataStructure(data.categories, 'duaData.categories');
+    
+    if (!data.categories || !Array.isArray(data.categories)) {
+      console.error('Categories data is not in expected format:', data.categories);
+      return [];
+    }
+    
+    return data.categories.map(category => ({
       id: category.id,
       name: category.name[language] || category.name.en,
       description: category.description[language] || category.description.en,
       count: category.count
-    }))
+    }));
   } catch (error) {
-    console.error('Error getting categories:', error)
-    return []
+    console.error('Error getting categories:', error);
+    return [];
   }
 }
 
@@ -164,6 +190,10 @@ export async function getAllCategories(language: string = 'en'): Promise<Categor
   try {
     const duaCategories = await getCategories(language);
     const azkarCategories = await getAzkarCategories();
+    
+    // Debug what's being returned
+    console.log('Dua categories count:', duaCategories.length);
+    console.log('Azkar categories count:', azkarCategories.length);
     
     return [...duaCategories, ...azkarCategories];
   } catch (error) {
@@ -174,29 +204,57 @@ export async function getAllCategories(language: string = 'en'): Promise<Categor
 
 export async function getDuasByCategory(categoryId: string, language: string = 'en'): Promise<Dua[]> {
   try {
-    const duas = await getDuas(language)
-    const categories = await getCategories(language)
-    const category = categories.find(c => c.id === categoryId)
+    const duas = await getDuas(language);
+    const categories = await getCategories(language);
+    const category = categories.find(c => c.id === categoryId);
     
     if (!category) {
-      return []
+      console.error(`Category not found with ID: ${categoryId}`);
+      return [];
     }
 
-    return duas.filter(dua => {
-      const duaCategory = dua.category.toLowerCase().trim()
-      const categoryName = category.name.toLowerCase().trim()
-      return duaCategory === categoryName
-    })
+    const filteredDuas = duas.filter(dua => {
+      const duaCategory = dua.category.toLowerCase().trim();
+      const categoryName = category.name.toLowerCase().trim();
+      return duaCategory === categoryName;
+    });
+    
+    console.log(`Filtered duas for category ${category.name}:`, filteredDuas.length);
+    return filteredDuas;
   } catch (error) {
-    console.error('Error filtering duas by category:', error)
-    return []
+    console.error('Error filtering duas by category:', error);
+    return [];
   }
 }
 
-export async function getAzkarByCategory(categoryName: string): Promise<Zikr[]> {
+export async function getAzkarByCategory(categoryId: string): Promise<Zikr[]> {
   try {
     const azkar = await getAzkar();
-    return azkar.filter(zikr => zikr.category.toLowerCase().trim() === categoryName.toLowerCase().trim());
+    
+    // Handle the special category ID format for azkar
+    if (categoryId.startsWith('azkar-category-')) {
+      const categoryIdMatch = categoryId.match(/^azkar-category-(\d+)$/);
+      
+      if (categoryIdMatch) {
+        const azkarCategories = await getAzkarCategories();
+        const categoryIndex = parseInt(categoryIdMatch[1]);
+        
+        if (azkarCategories[categoryIndex]) {
+          const categoryName = azkarCategories[categoryIndex].name;
+          
+          const filteredAzkar = azkar.filter(zikr => 
+            zikr.category.toLowerCase().trim() === categoryName.toLowerCase().trim()
+          );
+          
+          console.log(`Filtered azkar for category ${categoryName}:`, filteredAzkar.length);
+          return filteredAzkar;
+        }
+      }
+    }
+    
+    // If we can't parse the category ID, return all azkar
+    console.error(`Invalid azkar category ID: ${categoryId}`);
+    return azkar;
   } catch (error) {
     console.error('Error filtering azkar by category:', error);
     return [];
