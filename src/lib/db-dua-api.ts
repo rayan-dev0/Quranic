@@ -6,22 +6,22 @@ export interface Dua {
   id: string;
   title: string;
   arabic: string;
-  translation: string;
   transliteration: string;
+  translation: string;
   reference: string;
   category: string;
-  tags: string[];
   benefits?: string;
+  tags: string[];
   favorite?: boolean;
 }
 
 export interface Zikr {
   id: string;
-  category: string;
   arabic: string;
   description: string;
-  count: number;
   reference: string;
+  category: string;
+  count: number;
   favorite?: boolean;
 }
 
@@ -34,45 +34,29 @@ export interface Category {
 
 // Interfaces for the database structure
 interface DbHadith {
-  id: number;
-  idInBook: number;
-  chapterId: number;
-  bookId: number;
+  id: string;
+  bookId: string;
+  chapterId: string;
+  idInBook: string;
   arabic: string;
   english: {
-    narrator?: string;
     text: string;
   };
-  grades?: {
-    grade: string;
-  }[];
 }
 
 interface DbChapter {
-  id: number;
-  bookId: number;
-  arabic: string;
+  id: string;
   english: string;
 }
 
 interface DbBook {
-  id: number;
-  metadata: {
-    id: number;
-    length: number;
-    arabic: {
+  metadata?: {
+    english?: {
       title: string;
-      author: string;
-      introduction: string;
-    };
-    english: {
-      title: string;
-      author: string;
-      introduction: string;
     };
   };
-  chapters: DbChapter[];
-  hadiths: DbHadith[];
+  chapters?: DbChapter[];
+  hadiths?: DbHadith[];
 }
 
 // Cache for loaded data
@@ -82,41 +66,18 @@ let categoriesCache: Category[] | null = null;
 let booksDataCache: Record<string, DbBook> = {};
 
 // Helper function to fetch JSON data
-async function fetchJsonFile(filePath: string) {
+async function fetchJsonFile(path: string): Promise<any> {
   try {
-    // Make sure path is relative to the base URL and handle different environments
-    let url;
-    
-    // In the browser, we need to use the same origin
-    if (typeof window !== 'undefined') {
-      const baseUrl = window.location.origin;
-      // Remove any leading slash to avoid double slashes
-      const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
-      url = `${baseUrl}/${cleanPath}`;
-    } else {
-      // For server-side rendering
-      url = filePath.startsWith('/') ? filePath : `/${filePath}`;
-    }
-    
-    console.log(`[DEBUG] Fetching data from: ${url}`);
-    
-    const response = await fetch(url);
-    console.log(`[DEBUG] Fetch response status: ${response.status} ${response.statusText}`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log(`[DEBUG] Successfully parsed JSON data from ${url}, data type: ${typeof data}, is array: ${Array.isArray(data)}, length: ${Array.isArray(data) ? data.length : 'N/A'}`);
-    return data;
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
   } catch (error) {
-    console.error(`[ERROR] Error fetching ${filePath}:`, error);
+    console.error(`Error fetching ${path}:`, error);
     return null;
   }
 }
 
-// Function to determine if a hadith contains dua or dhikr terms
+// Function to determine if a hadith contains dua terms
 function containsDuaTerms(text: string): boolean {
   const duaTerms = [
     // English terms
@@ -163,6 +124,7 @@ function containsDuaTerms(text: string): boolean {
   return false;
 }
 
+// Function to determine if a hadith contains zikr terms
 function containsZikrTerms(text: string): boolean {
   const zikrTerms = [
     // English terms
@@ -229,7 +191,7 @@ async function loadBookData(bookId: string): Promise<DbBook | null> {
   
   // First try the 9 books
   try {
-    const data = await fetchJsonFile(`src/data/db/by_book/the_9_books/${bookId}.json`);
+    const data = await fetchJsonFile(`/src/data/db/by_book/the_9_books/${bookId}.json`);
     if (data) {
       booksDataCache[bookId] = data;
       return data;
@@ -240,7 +202,7 @@ async function loadBookData(bookId: string): Promise<DbBook | null> {
   
   // Then try other books
   try {
-    const data = await fetchJsonFile(`src/data/db/by_book/other_books/${bookId}.json`);
+    const data = await fetchJsonFile(`/src/data/db/by_book/other_books/${bookId}.json`);
     if (data) {
       booksDataCache[bookId] = data;
       return data;
@@ -251,7 +213,7 @@ async function loadBookData(bookId: string): Promise<DbBook | null> {
   
   // Finally try forties
   try {
-    const data = await fetchJsonFile(`src/data/db/by_book/forties/${bookId}.json`);
+    const data = await fetchJsonFile(`/src/data/db/by_book/forties/${bookId}.json`);
     if (data) {
       booksDataCache[bookId] = data;
       return data;
@@ -319,12 +281,13 @@ function convertToDua(hadith: DbHadith, bookTitle: string, chapterTitle?: string
     id: duaId,
     title,
     arabic: hadith.arabic,
+    transliteration: '', // We don't have transliteration in the database
     translation: hadith.english.text,
-    transliteration: '', // We don't have transliteration in the hadith data
     reference,
     category,
+    benefits,
     tags,
-    benefits
+    favorite: false
   };
 }
 
@@ -358,11 +321,12 @@ function convertToZikr(hadith: DbHadith, bookTitle: string, chapterTitle?: strin
   
   return {
     id: zikrId,
-    category,
     arabic: hadith.arabic,
     description: hadith.english.text,
+    reference,
+    category,
     count,
-    reference
+    favorite: false
   };
 }
 
@@ -376,18 +340,6 @@ export async function getDuas(language: string = 'en'): Promise<Dua[]> {
   }
   
   try {
-    // First try to load from static file
-    console.log(`[DEBUG] Attempting to load duas from static file...`);
-    const staticDuas = await fetchJsonFile('/data/duas.json');
-    
-    if (Array.isArray(staticDuas) && staticDuas.length > 0) {
-      console.log(`[DEBUG] Successfully loaded ${staticDuas.length} duas from static file`);
-      duasCache = staticDuas;
-      return staticDuas;
-    }
-    
-    console.warn('[WARN] No static duas found or empty array returned, trying DB...');
-    
     // If static file doesn't work, try loading from DB
     const bookIds = [
       // The 9 main books
@@ -515,18 +467,6 @@ export async function getAzkar(language: string = 'en'): Promise<Zikr[]> {
   }
   
   try {
-    // First try to load from static file
-    console.log(`[DEBUG] Attempting to load azkar from static file...`);
-    const staticAzkar = await fetchJsonFile('/data/azkar.json');
-    
-    if (Array.isArray(staticAzkar) && staticAzkar.length > 0) {
-      console.log(`[DEBUG] Successfully loaded ${staticAzkar.length} azkar from static file`);
-      azkarCache = staticAzkar;
-      return staticAzkar;
-    }
-    
-    console.warn('[WARN] No static azkar found or empty array returned, trying DB...');
-    
     // If static file doesn't work, try loading from DB
     const bookIds = [
       // The 9 main books

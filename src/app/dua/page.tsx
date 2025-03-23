@@ -60,31 +60,31 @@ const DuaCard = ({ dua }: { dua: Dua }) => {
       className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
     >
       <div className="p-6 pb-2">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
               <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <div>
+          </div>
+          <div>
               <h3 className="text-lg font-semibold text-white">{dua.title}</h3>
               <p className="text-sm text-blue-200/70">{dua.category}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={handleFavorite}
+          <button
+            onClick={handleFavorite}
               className="p-2 rounded-full hover:bg-white/10 transition-colors"
               aria-label="Favorite"
-            >
-              <Heart
+          >
+            <Heart
                 size={18}
                 className={`transition-colors ${
                   isFavorite ? 'fill-rose-500 text-rose-500' : 'text-gray-400'
-                }`}
-              />
-            </button>
-            <button 
-              onClick={handleShare}
+              }`}
+            />
+          </button>
+          <button
+            onClick={handleShare}
               className="p-2 rounded-full hover:bg-white/10 transition-colors relative"
               aria-label="Copy to clipboard"
             >
@@ -98,24 +98,24 @@ const DuaCard = ({ dua }: { dua: Dua }) => {
                   Copied!
                 </span>
               )}
-            </button>
-          </div>
+          </button>
         </div>
+      </div>
 
         <div className="mt-6 mb-2">
           <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
             <p className="text-xl font-arabic text-right leading-loose text-white tracking-wider">
-              {dua.arabic}
-            </p>
+          {dua.arabic}
+        </p>
           </div>
           
           <div className="space-y-4">
             <p className="text-sm italic font-light text-blue-200/70 leading-relaxed">
-              {dua.transliteration}
-            </p>
+            {dua.transliteration}
+          </p>
             <p className={`text-white/90 leading-relaxed font-light ${currentLanguage.direction === 'rtl' ? 'text-right' : 'text-left'}`}>
-              {dua.translation}
-            </p>
+            {dua.translation}
+          </p>
             
             {/* Always show reference */}
             <div className="flex items-center gap-2 text-xs">
@@ -123,46 +123,46 @@ const DuaCard = ({ dua }: { dua: Dua }) => {
                 {dua.reference}
               </span>
             </div>
-          </div>
+        </div>
 
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
                 className="pt-4 space-y-4"
-              >
-                {dua.benefits && (
+            >
+              {dua.benefits && (
                   <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
                     <h4 className="text-sm font-medium text-blue-300 mb-2">Benefits</h4>
                     <p className="text-sm text-white/80">{dua.benefits}</p>
-                  </div>
-                )}
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {dua.tags.map(tag => (
-                    <span key={tag} className="px-3 py-1 rounded-full bg-slate-700 text-blue-200">
-                      {tag}
-                    </span>
-                  ))}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                {dua.tags.map(tag => (
+                    <span key={tag} className="px-3 py-1 rounded-full bg-slate-700 text-blue-200">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         </div>
       </div>
-      
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
+
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-center gap-2 w-full p-3 bg-slate-800/90 hover:bg-slate-700/90 transition-colors text-sm font-medium text-blue-200"
-      >
-        {isExpanded ? 'Show less' : 'Show more'}
-        <ChevronDown
-          className={`h-4 w-4 transition-transform ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
+        >
+          {isExpanded ? 'Show less' : 'Show more'}
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${
+              isExpanded ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
     </motion.div>
   )
 }
@@ -203,12 +203,12 @@ const ZikrCard = ({ zikr }: { zikr: Zikr }) => {
       className="bg-gradient-to-br from-slate-900 to-emerald-900/50 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
     >
       <div className="p-6 pb-2">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md">
               <Book className="h-5 w-5 text-white" />
-            </div>
-            <div>
+          </div>
+          <div>
               <h3 className="text-lg font-semibold text-white">{zikr.category}</h3>
               {zikr.count > 1 && (
                 <div className="flex items-center gap-1 mt-1">
@@ -221,20 +221,20 @@ const ZikrCard = ({ zikr }: { zikr: Zikr }) => {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={handleFavorite}
+          <button
+            onClick={handleFavorite}
               className="p-2 rounded-full hover:bg-white/10 transition-colors"
               aria-label="Favorite"
-            >
-              <Heart
+          >
+            <Heart
                 size={18}
                 className={`transition-colors ${
                   isFavorite ? 'fill-rose-500 text-rose-500' : 'text-gray-400'
-                }`}
-              />
-            </button>
-            <button 
-              onClick={handleShare}
+              }`}
+            />
+          </button>
+          <button
+            onClick={handleShare}
               className="p-2 rounded-full hover:bg-white/10 transition-colors relative"
               aria-label="Copy to clipboard"
             >
@@ -248,48 +248,48 @@ const ZikrCard = ({ zikr }: { zikr: Zikr }) => {
                   Copied!
                 </span>
               )}
-            </button>
-          </div>
+          </button>
         </div>
+      </div>
 
         <div className="mt-6 mb-2">
           <div className="bg-slate-800/50 rounded-xl p-4 mb-4">
             <p className="text-xl font-arabic text-right leading-loose text-white tracking-wider">
-              {zikr.arabic}
-            </p>
+          {zikr.arabic}
+        </p>
           </div>
-          
-          {zikr.description && (
-            <div className="space-y-2">
+        
+        {zikr.description && (
+          <div className="space-y-2">
               <p className={`text-white/90 leading-relaxed font-light ${currentLanguage.direction === 'rtl' ? 'text-right' : 'text-left'}`}>
-                {zikr.description}
-              </p>
+              {zikr.description}
+            </p>
               
               {/* Always show reference */}
-              {zikr.reference && (
+                {zikr.reference && (
                 <div className="flex items-center gap-2 text-xs mt-3">
                   <span className="px-3 py-1 rounded-full bg-slate-700 text-emerald-200">
                     {zikr.reference}
                   </span>
                 </div>
-              )}
-            </div>
+                )}
+              </div>
           )}
         </div>
       </div>
-      
+
       {zikr.count > 1 ? (
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center justify-center gap-2 w-full p-3 bg-slate-800/90 hover:bg-slate-700/90 transition-colors text-sm font-medium text-emerald-200"
-        >
+          >
           {isExpanded ? 'Show less' : 'Show details'}
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${
-              isExpanded ? 'rotate-180' : ''
-            }`}
-          />
-        </button>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${
+                isExpanded ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
       ) : null}
 
       {/* Only render expanded content when expanded */}
@@ -717,7 +717,7 @@ const DuaPage = () => {
       isMounted = false;
     };
   }, [searchQuery, selectedCategory, active, currentLanguage.id, duas, azkar]);
-  
+
   // Reset selection when tab changes
   useEffect(() => {
     setSelectedCategory(null);
@@ -774,7 +774,7 @@ const DuaPage = () => {
             </div>
           </div>
         </div>
-        
+
         <DebugInfo />
 
         {/* Tabs */}
@@ -804,17 +804,17 @@ const DuaPage = () => {
           {/* Search */}
           <div className="relative mb-10 max-w-2xl mx-auto">
             <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
+            <input
+              type="text"
+              value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder={
+              placeholder={
                   active === 'duas'
-                    ? (currentLanguage.direction === 'rtl' ? 'ابحث عن دعاء...' : 'Search for a dua...')
-                    : (currentLanguage.direction === 'rtl' ? 'ابحث عن ذكر...' : 'Search for a dhikr...')
-                }
+                  ? (currentLanguage.direction === 'rtl' ? 'ابحث عن دعاء...' : 'Search for a dua...')
+                  : (currentLanguage.direction === 'rtl' ? 'ابحث عن ذكر...' : 'Search for a dhikr...')
+              }
                 className="w-full bg-slate-800/50 backdrop-blur-sm text-white rounded-xl px-12 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/70 placeholder-slate-500 shadow-inner"
-              />
+            />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
             </div>
           </div>
@@ -829,18 +829,18 @@ const DuaPage = () => {
                   {active === 'duas' ? 'Categories' : 'Adhkar Types'}
                 </h3>
                 <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 custom-scrollbar">
-                  {filteredCategories.map(category => (
-                    <CategoryCard
+            {filteredCategories.map(category => (
+                <CategoryCard
                       key={category.id}
-                      category={category}
+                  category={category}
                       isSelected={selectedCategory?.id === category.id}
                       onClick={() => handleCategorySelection(
                         selectedCategory?.id === category.id ? null : category
                       )}
                       isAzkar={category.id.startsWith('zikr-cat-')}
                     />
-                  ))}
-                </div>
+            ))}
+          </div>
               </div>
             </div>
 
@@ -875,24 +875,24 @@ const DuaPage = () => {
               {/* Loading indicator */}
               {loading && (
                 <div className="flex justify-center my-8">
-                  <div className="relative h-10 w-10">
+              <div className="relative h-10 w-10">
                     <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse" />
                     <div className="absolute inset-1 rounded-full border-2 border-t-primary border-r-transparent animate-spin" />
-                  </div>
-                </div>
-              )}
+              </div>
+            </div>
+          )}
 
               {/* Duas content */}
-              <TabsContent value="duas" className="space-y-6">
+          <TabsContent value="duas" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="popLayout">
                     {filteredDuas.length > 0 && filteredDuas.map(dua => (
                       <DuaCard 
                         key={`${dua.id}-${currentLanguage.id}`} 
                         dua={dua} 
                       />
-                    ))}
-                  </AnimatePresence>
+              ))}
+            </AnimatePresence>
                 </div>
 
                 {filteredDuas.length === 0 && !loading && (
@@ -901,27 +901,27 @@ const DuaPage = () => {
                       <Search className="h-8 w-8 text-slate-500" />
                     </div>
                     <p className="text-slate-400">
-                      {searchQuery
-                        ? 'No duas found matching your search.'
-                        : selectedCategory
-                        ? 'No duas found in this category.'
-                        : 'No duas available.'}
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
+                  {searchQuery
+                    ? 'No duas found matching your search.'
+                    : selectedCategory
+                    ? 'No duas found in this category.'
+                    : 'No duas available.'}
+                </p>
+              </div>
+            )}
+          </TabsContent>
 
               {/* Azkar content */}
-              <TabsContent value="azkar" className="space-y-6">
+          <TabsContent value="azkar" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <AnimatePresence mode="popLayout">
+            <AnimatePresence mode="popLayout">
                     {filteredAzkar.length > 0 && filteredAzkar.map(zikr => (
                       <ZikrCard 
                         key={`${zikr.id}-${currentLanguage.id}`} 
                         zikr={zikr} 
                       />
-                    ))}
-                  </AnimatePresence>
+              ))}
+            </AnimatePresence>
                 </div>
 
                 {filteredAzkar.length === 0 && !loading && (
@@ -930,15 +930,15 @@ const DuaPage = () => {
                       <Search className="h-8 w-8 text-slate-500" />
                     </div>
                     <p className="text-slate-400">
-                      {searchQuery
-                        ? 'No adhkar found matching your search.'
-                        : selectedCategory
-                        ? 'No adhkar found in this category.'
-                        : 'No adhkar available.'}
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
+                  {searchQuery
+                    ? 'No adhkar found matching your search.'
+                    : selectedCategory
+                    ? 'No adhkar found in this category.'
+                    : 'No adhkar available.'}
+                </p>
+              </div>
+            )}
+          </TabsContent>
             </div>
           </div>
         </Tabs>
@@ -954,6 +954,6 @@ const DuaPage = () => {
       </div>
     </div>
   )
-}
+} 
 
 export default DuaPage 

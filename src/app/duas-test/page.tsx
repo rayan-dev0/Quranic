@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getDuas, getAzkar, searchDuas, searchAzkar, filterDuas, filterAzkar, type Dua, type Zikr, type Category } from '@/lib/db-dua-api'
+import { getDuas, getAzkar, getCategories, searchDuas, searchAzkar, filterDuas, filterAzkar, type Dua, type Zikr, type Category } from '@/lib/db-dua-api'
 import { Search, Book, Heart } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
