@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Book, Heart, Bookmark, Share2, ChevronDown, RotateCcw, Copy, ArrowRight, Sparkles, Check } from 'lucide-react'
+import { Search, Book, Heart, Bookmark, Share2, ChevronDown, RotateCcw, Copy, ArrowRight, Sparkles, Check, Globe, Bug } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -10,20 +10,19 @@ import {
   getDuas,
   getAzkar,
   getCategories,
-  getAzkarCategories,
-  getAllCategories,
-  getDuasByCategory,
-  getAzkarByCategory,
   searchDuas,
   searchAzkar,
+  filterDuas,
+  filterAzkar,
   toggleFavoriteDua,
   toggleFavoriteZikr,
   isFavoriteDua,
   isFavoriteZikr,
   type Dua,
   type Zikr,
-  type Category
-} from '@/lib/dua-api'
+  type Category,
+  testCategories
+} from '@/lib/db-dua-api'
 
 const DuaCard = ({ dua }: { dua: Dua }) => {
   if (!dua || typeof dua !== 'object') {
@@ -117,6 +116,13 @@ const DuaCard = ({ dua }: { dua: Dua }) => {
             <p className={`text-white/90 leading-relaxed font-light ${currentLanguage.direction === 'rtl' ? 'text-right' : 'text-left'}`}>
               {dua.translation}
             </p>
+            
+            {/* Always show reference */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="px-3 py-1 rounded-full bg-slate-700 text-blue-200">
+                {dua.reference}
+              </span>
+            </div>
           </div>
 
           <AnimatePresence>
@@ -134,9 +140,6 @@ const DuaCard = ({ dua }: { dua: Dua }) => {
                   </div>
                 )}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="px-3 py-1 rounded-full bg-slate-700 text-blue-200">
-                    {dua.reference}
-                  </span>
                   {dua.tags.map(tag => (
                     <span key={tag} className="px-3 py-1 rounded-full bg-slate-700 text-blue-200">
                       {tag}
@@ -261,55 +264,62 @@ const ZikrCard = ({ zikr }: { zikr: Zikr }) => {
               <p className={`text-white/90 leading-relaxed font-light ${currentLanguage.direction === 'rtl' ? 'text-right' : 'text-left'}`}>
                 {zikr.description}
               </p>
+              
+              {/* Always show reference */}
+              {zikr.reference && (
+                <div className="flex items-center gap-2 text-xs mt-3">
+                  <span className="px-3 py-1 rounded-full bg-slate-700 text-emerald-200">
+                    {zikr.reference}
+                  </span>
+                </div>
+              )}
             </div>
           )}
-
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="pt-4 space-y-2"
-              >
-                {zikr.reference && (
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="px-3 py-1 rounded-full bg-slate-700 text-emerald-200">
-                      {zikr.reference}
-                    </span>
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
       
-      {zikr.reference && (
+      {zikr.count > 1 ? (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center justify-center gap-2 w-full p-3 bg-slate-800/90 hover:bg-slate-700/90 transition-colors text-sm font-medium text-emerald-200"
         >
-          {isExpanded ? 'Show less' : 'Show more'}
+          {isExpanded ? 'Show less' : 'Show details'}
           <ChevronDown
             className={`h-4 w-4 transition-transform ${
               isExpanded ? 'rotate-180' : ''
             }`}
           />
         </button>
-      )}
+      ) : null}
+
+      {/* Only render expanded content when expanded */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-6 pb-4"
+          >
+            <div className="p-3 bg-emerald-900/20 rounded-lg">
+              <p className="text-xs text-emerald-200 mb-1 font-medium">Recitation Details</p>
+              <p className="text-sm text-white/80">
+                This dhikr should be repeated {zikr.count} times, preferably in one sitting.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
 
-const CategoryCard = ({ category, isSelected, onClick }: { 
+const CategoryCard = ({ category, isSelected, onClick, isAzkar }: { 
   category: Category; 
   isSelected: boolean;
   onClick: () => void;
+  isAzkar: boolean;
 }) => {
-  // Determine if it's a dua or azkar category
-  const isAzkarCategory = category.id.startsWith('azkar-category-');
-  
   return (
     <motion.div
       whileHover={{ scale: 1.01 }}
@@ -317,7 +327,7 @@ const CategoryCard = ({ category, isSelected, onClick }: {
       onClick={onClick}
       className={`relative overflow-hidden rounded-xl cursor-pointer transition-all duration-300 h-full ${
         isSelected 
-          ? isAzkarCategory 
+          ? isAzkar 
             ? 'ring-2 ring-emerald-500 shadow-lg shadow-emerald-900/20' 
             : 'ring-2 ring-blue-500 shadow-lg shadow-blue-900/20'
           : 'hover:shadow-md'
@@ -325,7 +335,7 @@ const CategoryCard = ({ category, isSelected, onClick }: {
     >
       {/* Background gradient */}
       <div className={`absolute inset-0 ${
-        isAzkarCategory
+        isAzkar
           ? 'bg-gradient-to-br from-slate-800 to-emerald-900/60'
           : 'bg-gradient-to-br from-slate-800 to-blue-900/60'
       }`} />
@@ -335,7 +345,7 @@ const CategoryCard = ({ category, isSelected, onClick }: {
         <div className="flex justify-between items-start">
           <h3 className="text-sm font-medium text-white">{category.name}</h3>
           <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-            isAzkarCategory
+            isAzkar
               ? 'bg-emerald-900/60 text-emerald-200'
               : 'bg-blue-900/60 text-blue-200'
           }`}>
@@ -348,16 +358,62 @@ const CategoryCard = ({ category, isSelected, onClick }: {
   )
 }
 
-export default function DuaPage() {
-  const [activeTab, setActiveTab] = useState('duas')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+const DuaPage = () => {
+  const [loading, setLoading] = useState(true)
+  const [active, setActive] = useState('duas')
   const [duas, setDuas] = useState<Dua[]>([])
   const [azkar, setAzkar] = useState<Zikr[]>([])
+  const [filteredDuas, setFilteredDuas] = useState<Dua[]>([])
+  const [filteredAzkar, setFilteredAzkar] = useState<Zikr[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isFiltering, setIsFiltering] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const { currentLanguage } = useLanguage()
+  const [showDebug, setShowDebug] = useState(false)
+
+  // Debugging component
+  const DebugInfo = () => {
+    if (!showDebug) return null;
+    
+    const runTest = async () => {
+      try {
+        const result = await testCategories();
+        console.log('Test result:', result);
+      } catch (error) {
+        console.error('Test error:', error);
+      }
+    };
+    
+    return (
+      <div className="bg-red-800/40 p-3 rounded-lg text-white text-xs mb-4">
+        <h3 className="font-bold mb-2">Debug Information</h3>
+        <div className="space-y-1">
+          <p>Duas loaded: {duas.length}</p>
+          <p>Azkar loaded: {azkar.length}</p>
+          <p>Categories: {categories.length}</p>
+          <p>Filtered duas: {filteredDuas.length}</p>
+          <p>Filtered azkar: {filteredAzkar.length}</p>
+          <p>Selected category: {selectedCategory?.name || 'None'}</p>
+          <p>Search query: "{searchQuery}"</p>
+          <p>Current language: {currentLanguage.id}</p>
+          <div className="flex gap-2 mt-2">
+            <button 
+              onClick={() => console.log({ duas, azkar, categories })}
+              className="px-2 py-1 bg-red-700 rounded"
+            >
+              Log Data
+            </button>
+            <button 
+              onClick={runTest}
+              className="px-2 py-1 bg-red-700 rounded"
+            >
+              Test Categories
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Add custom scrollbar style
   useEffect(() => {
@@ -392,121 +448,284 @@ export default function DuaPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching initial data...');
+        console.log('Fetching initial data with language:', currentLanguage.id);
         
         // Use Promise.all for parallel fetching
-        const [duasData, azkarData, categoriesData] = await Promise.all([
+        const [duasData, azkarData, duaCategories, azkarCategories] = await Promise.all([
           getDuas(currentLanguage.id),
           getAzkar(),
-          getAllCategories(currentLanguage.id)
+          getCategories('duas'),
+          getCategories('azkar')
         ]);
+        
+        // Combine categories
+        const allCategories = [...duaCategories, ...azkarCategories];
         
         console.log('Data fetch complete:', {
           duasCount: duasData.length,
           azkarCount: azkarData.length,
-          categoriesCount: categoriesData.length
+          duaCategoriesCount: duaCategories.length,
+          azkarCategoriesCount: azkarCategories.length,
+          combinedCategoriesCount: allCategories.length,
+          duaCategories: duaCategories.map(c => c.id),
+          azkarCategories: azkarCategories.map(c => c.id),
+          language: currentLanguage.id
         });
         
         // Only update state if we have valid data
-        if (Array.isArray(duasData)) {
+        if (Array.isArray(duasData) && duasData.length > 0) {
           setDuas(duasData);
+          setFilteredDuas(duasData);
         } else {
-          console.error('Invalid duas data:', duasData);
-          setDuas([]);
+          console.error('Invalid or empty duas data from db-dua-api, trying fallback API');
+          // Try the fallback API
+          try {
+            const fallbackDuas = await import('@/lib/dua-api').then(api => api.getDuas(currentLanguage.id));
+            if (Array.isArray(fallbackDuas) && fallbackDuas.length > 0) {
+              console.log('Successfully loaded duas from fallback API');
+              setDuas(fallbackDuas);
+              setFilteredDuas(fallbackDuas);
+            } else {
+              console.error('Fallback API also failed for duas');
+              setDuas([]);
+              setFilteredDuas([]);
+            }
+          } catch (fallbackError) {
+            console.error('Error using fallback API for duas:', fallbackError);
+            setDuas([]);
+            setFilteredDuas([]);
+          }
         }
         
-        if (Array.isArray(azkarData)) {
+        if (Array.isArray(azkarData) && azkarData.length > 0) {
           setAzkar(azkarData);
+          setFilteredAzkar(azkarData);
         } else {
-          console.error('Invalid azkar data:', azkarData);
-          setAzkar([]);
+          console.error('Invalid or empty azkar data from db-dua-api, trying fallback API');
+          // Try the fallback API
+          try {
+            const fallbackAzkar = await import('@/lib/dua-api').then(api => api.getAzkar());
+            if (Array.isArray(fallbackAzkar) && fallbackAzkar.length > 0) {
+              console.log('Successfully loaded azkar from fallback API');
+              setAzkar(fallbackAzkar);
+              setFilteredAzkar(fallbackAzkar);
+            } else {
+              console.error('Fallback API also failed for azkar');
+              setAzkar([]);
+              setFilteredAzkar([]);
+            }
+          } catch (fallbackError) {
+            console.error('Error using fallback API for azkar:', fallbackError);
+            setAzkar([]);
+            setFilteredAzkar([]);
+          }
         }
         
-        if (Array.isArray(categoriesData)) {
-          setCategories(categoriesData);
+        // Set combined categories
+        if (allCategories.length > 0) {
+          setCategories(allCategories);
         } else {
-          console.error('Invalid categories data:', categoriesData);
-          setCategories([]);
+          console.error('Invalid or empty categories data from db-dua-api, trying fallback API');
+          // Try the fallback API
+          try {
+            const fallbackApi = await import('@/lib/dua-api');
+            // We need to combine dua and azkar categories from fallback
+            const fallbackCategories = await fallbackApi.getCategories(currentLanguage.id);
+            setCategories(fallbackCategories);
+          } catch (fallbackError) {
+            console.error('Error using fallback API for categories:', fallbackError);
+            setCategories([]);
+          }
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
-        // Set empty arrays to avoid null/undefined errors
-        setDuas([]);
-        setAzkar([]);
-        setCategories([]);
+        console.error('Error fetching data from db-dua-api:', error);
+        // Try to use the original dua-api as fallback
+        try {
+          console.log('Attempting to use fallback API...');
+          const fallbackApi = await import('@/lib/dua-api');
+          const [fallbackDuas, fallbackAzkar, fallbackCategories] = await Promise.all([
+            fallbackApi.getDuas(currentLanguage.id),
+            fallbackApi.getAzkar(),
+            fallbackApi.getCategories(currentLanguage.id)
+          ]);
+          
+          setDuas(fallbackDuas);
+          setAzkar(fallbackAzkar);
+          setCategories(fallbackCategories);
+          console.log('Successfully loaded data from fallback API');
+        } catch (fallbackError) {
+          console.error('Fallback API also failed:', fallbackError);
+          // Set empty arrays to avoid null/undefined errors
+          setDuas([]);
+          setAzkar([]);
+          setCategories([]);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
+  }, [currentLanguage.id]); // Re-fetch data when language changes
+
+  // Refresh data when language changes
+  useEffect(() => {
+    // Don't run on initial render
+    if (!loading) {
+      console.log('Language changed, refreshing data...');
+      // Re-filter existing content based on new language
+      if (selectedCategory) {
+        handleCategorySelection(selectedCategory);
+      } else if (searchQuery) {
+        handleSearch(searchQuery);
+      } else {
+        // Just fetch fresh data in the new language
+        const fetchData = async () => {
+          setLoading(true);
+          try {
+            const duasData = await getDuas(currentLanguage.id);
+            setDuas(duasData);
+          } catch (error) {
+            console.error('Error refreshing data after language change:', error);
+          } finally {
+            setLoading(false);
+          }
+        };
+        
+        fetchData();
+      }
+    }
   }, [currentLanguage.id]);
+
+  // Helper function to handle category selection
+  const handleCategorySelection = async (category: Category | null) => {
+    setSelectedCategory(category);
+    setSearchQuery('');
+    setLoading(true);
+    
+    try {
+      if (category) {
+        if (active === 'duas') {
+          // Filter the existing duas array instead of fetching new data
+          const filtered = filterDuas(duas, category.id);
+          setFilteredDuas(filtered);
+        } else {
+          // Filter the existing azkar array instead of fetching new data
+          const filtered = filterAzkar(azkar, category.id);
+          setFilteredAzkar(filtered);
+        }
+      } else {
+        // Reset to all items
+        setFilteredDuas(duas);
+        setFilteredAzkar(azkar);
+      }
+    } catch (error) {
+      console.error('Error in category selection:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Helper function to handle search
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    setSelectedCategory(null);
+    setLoading(true);
+    
+    try {
+      if (query.trim() !== '') {
+        if (active === 'duas') {
+          // Search the existing duas array instead of fetching new data
+          const results = searchDuas(query, duas);
+          setFilteredDuas(results);
+        } else {
+          // Search the existing azkar array instead of fetching new data
+          const results = searchAzkar(query, azkar);
+          setFilteredAzkar(results);
+        }
+      } else {
+        // Empty search resets to all items
+        setFilteredDuas(duas);
+        setFilteredAzkar(azkar);
+      }
+    } catch (error) {
+      console.error('Error in search:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter content when search or category changes
   useEffect(() => {
     // Skip if already filtering or initial data is still loading
-    if (isFiltering || loading) return;
+    if (loading) return;
 
     let isMounted = true;
     
     const filterContent = async () => {
-      setIsFiltering(true);
+      setLoading(true);
       
       try {
-        if (activeTab === 'duas') {
+        if (active === 'duas') {
           let filteredDuas: Dua[];
           
           if (searchQuery) {
-            filteredDuas = await searchDuas(searchQuery, currentLanguage.id);
-          } else if (selectedCategory) {
-            filteredDuas = await getDuasByCategory(selectedCategory, currentLanguage.id);
+            // Use the already loaded duas for filtering
+            filteredDuas = searchDuas(searchQuery, duas);
+          } else if (selectedCategory?.id) {
+            // Use the already loaded duas for filtering
+            filteredDuas = filterDuas(duas, selectedCategory.id);
           } else {
-            filteredDuas = await getDuas(currentLanguage.id);
+            // No need to fetch again
+            filteredDuas = duas;
           }
           
-          if (isMounted) setDuas(filteredDuas);
-        } else if (activeTab === 'azkar') {
+          if (isMounted) setFilteredDuas(filteredDuas);
+        } else if (active === 'azkar') {
           let filteredAzkar: Zikr[];
           
           if (searchQuery) {
-            filteredAzkar = await searchAzkar(searchQuery);
-          } else if (selectedCategory) {
-            // Directly use getAzkarByCategory with the selected category ID
-            filteredAzkar = await getAzkarByCategory(selectedCategory);
+            // Use the already loaded azkar for filtering
+            filteredAzkar = searchAzkar(searchQuery, azkar);
+          } else if (selectedCategory?.id) {
+            // Use the already loaded azkar for filtering
+            filteredAzkar = filterAzkar(azkar, selectedCategory.id);
           } else {
-            filteredAzkar = await getAzkar();
+            // No need to fetch again
+            filteredAzkar = azkar;
           }
           
           console.log("Filtered Azkar count:", filteredAzkar.length);
-          if (isMounted) setAzkar(filteredAzkar);
+          if (isMounted) setFilteredAzkar(filteredAzkar);
         }
       } catch (error) {
         console.error('Error filtering content:', error);
       } finally {
-        if (isMounted) setIsFiltering(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     console.log("Running filterContent with:", {
-      activeTab,
+      active,
       searchQuery,
-      selectedCategory
+      selectedCategory,
+      language: currentLanguage.id
     });
     filterContent();
     
     return () => {
       isMounted = false;
     };
-  }, [searchQuery, selectedCategory, activeTab, currentLanguage.id, loading]);
-
+  }, [searchQuery, selectedCategory, active, currentLanguage.id, duas, azkar]);
+  
   // Reset selection when tab changes
   useEffect(() => {
     setSelectedCategory(null);
     setSearchQuery('');
-  }, [activeTab]);
+  }, [active]);
 
   // Display loading state
-  if (loading && !isFiltering) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-slate-950">
         <div className="relative h-16 w-16">
@@ -519,44 +738,50 @@ export default function DuaPage() {
 
   // Filter categories based on active tab
   const filteredCategories = categories.filter(category => {
-    if (activeTab === 'duas') {
-      return !category.id.startsWith('azkar-category-');
+    if (active === 'duas') {
+      return category.id.startsWith('dua-cat-');
     } else {
-      return category.id.startsWith('azkar-category-');
+      return category.id.startsWith('zikr-cat-');
     }
   });
   
   // Log render state for debugging
   console.log('Rendering with:', {
-    activeTab,
+    active,
     duasCount: duas.length,
     azkarCount: azkar.length,
     categoriesCount: filteredCategories.length,
     selectedCategory,
-    isFiltering,
+    isFiltering: loading,
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 pb-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-3 relative inline-block">
+    <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-600">
             {currentLanguage.direction === 'rtl' ? 'الأدعية والأذكار' : 'Duas & Adhkar'}
-            <div className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500 rounded-full"></div>
           </h1>
-          <p className="text-slate-400 max-w-2xl mx-auto">
-            {currentLanguage.direction === 'rtl'
-              ? 'مجموعة من الأدعية والأذكار المأثورة عن النبي ﷺ'
-              : 'A collection of authentic duas and adhkar from the Prophet ﷺ'}
-          </p>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowDebug(!showDebug)}
+              className="p-2 text-xs text-slate-400 hover:text-white"
+            >
+              {showDebug ? 'Hide Debug' : 'Debug'}
+            </button>
+            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-emerald-900/50 hover:bg-emerald-800/50 transition-colors">
+              <Globe size={16} className="text-emerald-300" />
+            </div>
+          </div>
         </div>
+        
+        <DebugInfo />
 
         {/* Tabs */}
         <Tabs 
           defaultValue="duas" 
-          value={activeTab}
-          onValueChange={setActiveTab}
+          value={active}
+          onValueChange={setActive}
           className="mb-8"
         >
           <div className="flex justify-center mb-8">
@@ -582,12 +807,9 @@ export default function DuaPage() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setSelectedCategory(null)
-                }}
+                onChange={(e) => handleSearch(e.target.value)}
                 placeholder={
-                  activeTab === 'duas'
+                  active === 'duas'
                     ? (currentLanguage.direction === 'rtl' ? 'ابحث عن دعاء...' : 'Search for a dua...')
                     : (currentLanguage.direction === 'rtl' ? 'ابحث عن ذكر...' : 'Search for a dhikr...')
                 }
@@ -604,21 +826,18 @@ export default function DuaPage() {
               <div className="bg-slate-900/60 p-4 rounded-xl">
                 <h3 className="text-white font-medium mb-4 flex items-center gap-2">
                   <Book className="h-4 w-4" />
-                  {activeTab === 'duas' ? 'Categories' : 'Adhkar Types'}
+                  {active === 'duas' ? 'Categories' : 'Adhkar Types'}
                 </h3>
                 <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 custom-scrollbar">
                   {filteredCategories.map(category => (
                     <CategoryCard
                       key={category.id}
                       category={category}
-                      isSelected={selectedCategory === category.id}
-                      onClick={() => {
-                        setSelectedCategory(
-                          selectedCategory === category.id ? null : category.id
-                        )
-                        setSearchQuery('')
-                        setIsFiltering(false)
-                      }}
+                      isSelected={selectedCategory?.id === category.id}
+                      onClick={() => handleCategorySelection(
+                        selectedCategory?.id === category.id ? null : category
+                      )}
+                      isAzkar={category.id.startsWith('zikr-cat-')}
                     />
                   ))}
                 </div>
@@ -633,7 +852,7 @@ export default function DuaPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400 text-sm">Filtered by:</span>
                     <span className="text-white font-medium bg-slate-700 px-3 py-1 rounded-full text-sm flex items-center gap-1">
-                      {filteredCategories.find(c => c.id === selectedCategory)?.name}
+                      {selectedCategory.name}
                       <button 
                         onClick={() => setSelectedCategory(null)} 
                         className="ml-1 bg-slate-600 rounded-full p-0.5 hover:bg-slate-500 transition-colors"
@@ -645,16 +864,16 @@ export default function DuaPage() {
                     </span>
                   </div>
                   <div className="text-slate-400 text-sm">
-                    {activeTab === 'duas' 
-                      ? `${duas.length} ${duas.length === 1 ? 'dua' : 'duas'} found`
-                      : `${azkar.length} ${azkar.length === 1 ? 'dhikr' : 'adhkar'} found`
+                    {active === 'duas' 
+                      ? `${filteredDuas.length} ${filteredDuas.length === 1 ? 'dua' : 'duas'} found`
+                      : `${filteredAzkar.length} ${filteredAzkar.length === 1 ? 'dhikr' : 'adhkar'} found`
                     }
                   </div>
                 </div>
               )}
 
               {/* Loading indicator */}
-              {isFiltering && (
+              {loading && (
                 <div className="flex justify-center my-8">
                   <div className="relative h-10 w-10">
                     <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse" />
@@ -667,13 +886,16 @@ export default function DuaPage() {
               <TabsContent value="duas" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <AnimatePresence mode="popLayout">
-                    {duas.length > 0 && duas.map(dua => (
-                      <DuaCard key={dua.id} dua={dua} />
+                    {filteredDuas.length > 0 && filteredDuas.map(dua => (
+                      <DuaCard 
+                        key={`${dua.id}-${currentLanguage.id}`} 
+                        dua={dua} 
+                      />
                     ))}
                   </AnimatePresence>
                 </div>
 
-                {duas.length === 0 && !isFiltering && (
+                {filteredDuas.length === 0 && !loading && (
                   <div className="text-center py-20 bg-slate-900/50 rounded-2xl border border-slate-800">
                     <div className="bg-slate-800/50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Search className="h-8 w-8 text-slate-500" />
@@ -693,13 +915,16 @@ export default function DuaPage() {
               <TabsContent value="azkar" className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <AnimatePresence mode="popLayout">
-                    {azkar.length > 0 && azkar.map(zikr => (
-                      <ZikrCard key={zikr.id} zikr={zikr} />
+                    {filteredAzkar.length > 0 && filteredAzkar.map(zikr => (
+                      <ZikrCard 
+                        key={`${zikr.id}-${currentLanguage.id}`} 
+                        zikr={zikr} 
+                      />
                     ))}
                   </AnimatePresence>
                 </div>
 
-                {azkar.length === 0 && !isFiltering && (
+                {filteredAzkar.length === 0 && !loading && (
                   <div className="text-center py-20 bg-slate-900/50 rounded-2xl border border-slate-800">
                     <div className="bg-slate-800/50 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Search className="h-8 w-8 text-slate-500" />
@@ -717,7 +942,18 @@ export default function DuaPage() {
             </div>
           </div>
         </Tabs>
+
+        {/* Debug toggle button - small and discrete */}
+        <button 
+          onClick={() => setShowDebug(!showDebug)}
+          className="fixed bottom-4 right-4 p-2 bg-slate-900/70 hover:bg-slate-800 rounded-full text-slate-500 hover:text-slate-400 z-50"
+          aria-label="Toggle debug mode"
+        >
+          <Bug className="h-4 w-4" />
+        </button>
       </div>
     </div>
   )
-} 
+}
+
+export default DuaPage 
