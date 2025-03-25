@@ -124,3 +124,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ShadCN UI components
 - Next.js team
 - All contributors and supporters
+
+## TODO 
+- [ ] Mobile App for both Android and IOS using (lynx-app or React Native)
+- [ ] Integrate Dua and Dhikir Page 
+- [ ] Configure DB for all the Dua and Dhikir 
+- [ ] Implement Ai into the app using the preset dataset 
