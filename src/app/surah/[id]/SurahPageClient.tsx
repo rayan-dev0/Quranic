@@ -3,20 +3,20 @@
 import { useEffect, useState, useRef, useCallback, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
-import {
-  getSurah,
-  getVerses,
-  getCurrentJuz,
-  getJuzData,
+import { 
+  getSurah, 
+  getVerses, 
+  getCurrentJuz, 
+  getJuzData, 
   getVerseAudio,
   preloadVerseAudio,
   getCachedAudio,
   cleanupAudioCache,
   getWordByWordTranslation,
-  Chapter,
-  Verse,
-  Juz,
-  RECITERS,
+  Chapter, 
+  Verse, 
+  Juz, 
+  RECITERS, 
   Reciter,
 } from "@/lib/quran-api";
 import {
@@ -271,10 +271,10 @@ export default function SurahPageClient() {
   const [selectedVerseForShare, setSelectedVerseForShare] =
     useState<Verse | null>(null);
   const [isCapturingImage, setIsCapturingImage] = useState(false);
-
+  
   // Fix the ref type
   const verseRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
+  
   // Create a memoized ref callback
   const setVerseRef = useCallback((verseKey: string): RefCallback => {
     return (element: HTMLDivElement | null) => {
@@ -303,22 +303,22 @@ export default function SurahPageClient() {
   }, [surahId, currentLanguage?.id]);
 
   // Helper functions for playback, sharing, and copying
-
+  
   // Play a verse with a given key
   const playVerse = async (verseKey: string) => {
     try {
       setIsAudioLoading(true);
-
+      
       // Find index of the verse to set active verse
       const verseIndex = verses.findIndex((v) => v.verse_key === verseKey);
       if (verseIndex !== -1) {
         setActiveVerse(verseIndex);
       }
-
+      
       // Preload and play the audio
       await preloadVerseAudio(verseKey, selectedReciter.id);
       const audio = getCachedAudio(verseKey, selectedReciter.id);
-
+      
       if (audioRef.current && audio) {
         audioRef.current.src = audio.src;
         audioRef.current.volume = volume;
@@ -332,12 +332,12 @@ export default function SurahPageClient() {
       setIsAudioLoading(false);
     }
   };
-
+  
   // Function to capture verse as image
   const captureVerseAsImage = async (verse: Verse) => {
     try {
       setIsCapturingImage(true);
-
+      
       const verseElement = verseRefs.current[verse.verse_key];
       if (!verseElement) {
         throw new Error("Verse element not found");
@@ -388,7 +388,7 @@ export default function SurahPageClient() {
       template.style.position = "absolute";
       template.style.left = "-9999px";
       document.body.appendChild(template);
-
+      
       // Capture the image
       const canvas = await html2canvas(template, {
         backgroundColor: "#0A1020",
@@ -396,11 +396,11 @@ export default function SurahPageClient() {
         logging: false,
         useCORS: true,
       });
-
+      
       // Get the data URL and remove the temp element
       const imageUrl = canvas.toDataURL("image/png");
       document.body.removeChild(template);
-
+      
       setCapturedImage(imageUrl);
       setSelectedVerseForShare(verse);
       setShowShareModal(true);
@@ -411,11 +411,11 @@ export default function SurahPageClient() {
       setIsCapturingImage(false);
     }
   };
-
+  
   // Updated share function to open the modal
   const shareVerse = async (verse: Verse) => {
     setShareLoading(true);
-
+    
     try {
       await captureVerseAsImage(verse);
     } catch (error) {
@@ -429,7 +429,7 @@ export default function SurahPageClient() {
       setShareLoading(false);
     }
   };
-
+  
   // Share the verse image/text via platform
   const shareViaOption = async (
     option:
@@ -442,11 +442,11 @@ export default function SurahPageClient() {
       | "download"
   ) => {
     if (!selectedVerseForShare || !capturedImage) return;
-
+    
     const verse = selectedVerseForShare;
     const text = `Surah ${surah?.name_simple}, Verse ${verse.verse_number}: ${verse.translations[0]?.text}`;
     const url = `${window.location.origin}/surah/${surah?.id}#verse-${verse.verse_number}`;
-
+    
     try {
       switch (option) {
         case "facebook":
@@ -455,21 +455,21 @@ export default function SurahPageClient() {
             "_blank"
           );
           break;
-
+          
         case "twitter":
           window.open(
             `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
             "_blank"
           );
           break;
-
+          
         case "linkedin":
           window.open(
             `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
             "_blank"
           );
           break;
-
+          
         case "copyimage":
           // For browsers that support the Clipboard API with images
           try {
@@ -495,7 +495,7 @@ export default function SurahPageClient() {
             });
           }
           break;
-
+          
         case "copylink":
           await navigator.clipboard.writeText(url);
           setShareResult({
@@ -503,7 +503,7 @@ export default function SurahPageClient() {
             message: "Link copied to clipboard!",
           });
           break;
-
+          
         case "copytext":
           await navigator.clipboard.writeText(
             `${verse.text_uthmani}\n\n${verse.translations[0]?.text}\n\nSurah ${surah?.name_simple}, Verse ${verse.verse_number}`
@@ -513,7 +513,7 @@ export default function SurahPageClient() {
             message: "Text copied to clipboard!",
           });
           break;
-
+          
         case "download":
           const link = document.createElement("a");
           link.href = capturedImage;
@@ -525,7 +525,7 @@ export default function SurahPageClient() {
           });
           break;
       }
-
+      
       // Auto close modal for some options
       if (["copyimage", "copylink", "copytext", "download"].includes(option)) {
         setTimeout(() => {
@@ -542,28 +542,28 @@ export default function SurahPageClient() {
       setTimeout(() => setShareResult(null), 3000);
     }
   };
-
+  
   // Updated copy function to use the share modal
   const copyVerseToClipboard = (verse: Verse) => {
     shareVerse(verse);
   };
-
+  
   // Function to fetch word-by-word data with actual mapping to displayed words
   const fetchWordByWordData = async (verseKey: string) => {
     if (wordByWordData[verseKey]) return; // Already loaded
-
+    
     try {
       setWordByWordLoading(true);
-
+      
       // Get the verse text
       const verse = verses.find((v) => v.verse_key === verseKey);
       if (!verse) {
         throw new Error("Verse not found");
       }
-
+      
       // Get translations from QuranJS API
       const translations = await getWordByWordTranslation(verseKey);
-
+      
       // Log response to debug
       console.log(
         "QuranJS translation data for verse",
@@ -571,7 +571,7 @@ export default function SurahPageClient() {
         ":",
         translations
       );
-
+      
       // Get the displayed words
       const displayedWords = verse.text_uthmani.split(" ");
       console.log(
@@ -580,10 +580,10 @@ export default function SurahPageClient() {
         "Translation words:",
         translations.length
       );
-
+      
       // Ensure we have the correct mapping between displayed words and translations
       let mappedTranslations = [];
-
+      
       // In most cases, the API should now return the correct number of words
       // But we'll add handling for cases where counts don't match
       if (translations.length === displayedWords.length) {
@@ -599,22 +599,22 @@ export default function SurahPageClient() {
           ...Array(displayedWords.length - translations.length)
             .fill(0)
             .map((_, i) => ({
-              id: translations.length + i + 1,
-              position: translations.length + i + 1,
-              text: displayedWords[translations.length + i],
-              translation: `Word ${translations.length + i + 1}`,
-              transliteration: displayedWords[translations.length + i],
+            id: translations.length + i + 1,
+            position: translations.length + i + 1,
+            text: displayedWords[translations.length + i],
+            translation: `Word ${translations.length + i + 1}`,
+            transliteration: displayedWords[translations.length + i],
               part_of_speech: "NOUN",
             })),
         ];
       }
-
+      
       // Final check to ensure the Arabic text matches exactly what's displayed
       mappedTranslations = mappedTranslations.map((trans, idx) => ({
         ...trans,
         text: displayedWords[idx], // Always use the text as displayed for consistency
       }));
-
+      
       setWordByWordData((prev) => ({
         ...prev,
         [verseKey]: mappedTranslations,
@@ -629,13 +629,13 @@ export default function SurahPageClient() {
   if (loading || !surah) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-[#0A1020]">
-        <motion.div
+        <motion.div 
           className="relative h-16 w-16"
-          animate={{
-            rotate: 360,
+          animate={{ 
+            rotate: 360, 
             scale: [1, 1.1, 1],
           }}
-          transition={{
+          transition={{ 
             rotate: { repeat: Infinity, duration: 2, ease: "linear" },
             scale: { repeat: Infinity, duration: 1.5, ease: "easeInOut" },
           }}
@@ -648,33 +648,33 @@ export default function SurahPageClient() {
   }
 
   return (
-    <motion.div
+    <motion.div 
       className="min-h-screen bg-[#0A1020] pb-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.div
+      <motion.div 
         className="container mx-auto px-4 py-8"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{
-          delay: 0.1,
+        transition={{ 
+          delay: 0.1, 
           duration: 0.5,
           ease: [0.22, 1, 0.36, 1],
         }}
       >
-        <motion.div
+        <motion.div 
           className="bg-[#0F172A] rounded-xl shadow-lg p-6"
-          whileHover={{
+          whileHover={{ 
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
             y: -2,
           }}
           transition={{ duration: 0.2 }}
         >
           <div className="flex items-start gap-6">
-            <motion.div
+            <motion.div 
               className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xl font-semibold shadow-lg"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -684,9 +684,9 @@ export default function SurahPageClient() {
             >
               {surah.id}
             </motion.div>
-
+            
             <div className="flex-grow">
-              <motion.div
+              <motion.div 
                 className="text-5xl font-arabic text-gray-200 mb-2"
                 initial={{ x: -10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -694,7 +694,7 @@ export default function SurahPageClient() {
               >
                 {surah.name_arabic}
               </motion.div>
-              <motion.h1
+              <motion.h1 
                 className="text-2xl font-semibold text-gray-100 mb-1"
                 initial={{ x: -10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -702,7 +702,7 @@ export default function SurahPageClient() {
               >
                 {surah.name_simple}
               </motion.h1>
-              <motion.p
+              <motion.p 
                 className="text-lg text-gray-400 mb-4"
                 initial={{ x: -10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -710,16 +710,16 @@ export default function SurahPageClient() {
               >
                 {surah.translated_name.name}
               </motion.p>
-              <motion.div
+              <motion.div 
                 className="flex items-center gap-x-6 text-sm text-gray-400"
                 initial={{ x: -10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.4, duration: 0.4 }}
               >
                 <p className="flex items-center">
-                  <motion.span
+                  <motion.span 
                     className="w-2 h-2 rounded-full bg-blue-500 mr-2"
-                    animate={{
+                    animate={{ 
                       scale: [1, 1.2, 1],
                       backgroundColor: [
                         "rgb(59, 130, 246)",
@@ -732,9 +732,9 @@ export default function SurahPageClient() {
                   {surah.verses_count} Verses
                 </p>
                 <p className="flex items-center">
-                  <motion.span
+                  <motion.span 
                     className="w-2 h-2 rounded-full bg-blue-500 mr-2"
-                    animate={{
+                    animate={{ 
                       scale: [1, 1.2, 1],
                       backgroundColor: [
                         "rgb(59, 130, 246)",
@@ -752,17 +752,17 @@ export default function SurahPageClient() {
         </motion.div>
 
         {surah.bismillah_pre && (
-          <motion.div
+          <motion.div 
             className="text-center py-12"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{
-              delay: 0.3,
+            transition={{ 
+              delay: 0.3, 
               duration: 0.5,
               ease: [0.22, 1, 0.36, 1],
             }}
           >
-            <motion.p
+            <motion.p 
               className="text-4xl font-arabic text-gray-200 mb-3"
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
@@ -778,19 +778,19 @@ export default function SurahPageClient() {
 
         <div className="mt-8 space-y-6 mb-24">
           {verses.map((verse, index) => (
-            <motion.div
-              key={verse.id}
+            <motion.div 
+              key={verse.id} 
               className="relative overflow-hidden bg-gradient-to-br from-slate-900 to-[#0D1423] rounded-2xl p-1 shadow-xl group"
               id={`verse-${verse.verse_number}`}
               ref={setVerseRef(verse.verse_key)}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.4,
+              transition={{ 
+                duration: 0.4, 
                 delay: index * 0.1,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              whileHover={{
+              whileHover={{ 
                 scale: 1.01,
                 transition: { duration: 0.2 },
               }}
@@ -798,10 +798,10 @@ export default function SurahPageClient() {
               <div className="absolute inset-0 bg-[url('/islamic-pattern-light.svg')] opacity-5 group-hover:opacity-10 transition-opacity duration-500"></div>
               <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 blur-3xl rounded-full group-hover:bg-blue-500/20 transition-all duration-500"></div>
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-600/10 blur-3xl rounded-full group-hover:bg-indigo-600/20 transition-all duration-500"></div>
-
+              
               <div className="relative p-6 z-10">
                 <div className="flex items-start gap-4">
-                  <motion.div
+                  <motion.div 
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-sm font-medium shadow-lg shadow-blue-600/20"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
@@ -809,8 +809,8 @@ export default function SurahPageClient() {
                     {verse.verse_number}
                   </motion.div>
                   <div className="space-y-6 flex-grow">
-                    <motion.div
-                      dir="rtl"
+                    <motion.div 
+                      dir="rtl" 
                       className="text-right"
                       onMouseEnter={() => fetchWordByWordData(verse.verse_key)}
                       initial={{ opacity: 0.9 }}
@@ -821,77 +821,77 @@ export default function SurahPageClient() {
                         {verse.text_uthmani
                           .split(" ")
                           .map((word, wordIndex) => (
-                            <HoverCard.Root key={`word-${wordIndex}`}>
-                              <HoverCard.Trigger asChild>
+                          <HoverCard.Root key={`word-${wordIndex}`}>
+                            <HoverCard.Trigger asChild>
                                 <span className="inline-block px-1 py-0.5 mx-0.5 hover:bg-blue-500/20 hover:text-white rounded cursor-help transition-all duration-200 ease-in-out">
                                   {word}{" "}
-                                </span>
-                              </HoverCard.Trigger>
-                              <HoverCard.Portal>
-                                <HoverCard.Content
-                                  className="w-80 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] border border-blue-500/30 z-50 overflow-hidden backdrop-blur-lg"
-                                  sideOffset={5}
-                                  align="center"
-                                >
-                                  {wordByWordLoading ? (
-                                    <div className="flex flex-col items-center justify-center p-8">
-                                      <div className="h-8 w-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin mb-3" />
+                              </span>
+                            </HoverCard.Trigger>
+                            <HoverCard.Portal>
+                              <HoverCard.Content
+                                className="w-80 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 p-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] border border-blue-500/30 z-50 overflow-hidden backdrop-blur-lg"
+                                sideOffset={5}
+                                align="center"
+                              >
+                                {wordByWordLoading ? (
+                                  <div className="flex flex-col items-center justify-center p-8">
+                                    <div className="h-8 w-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin mb-3" />
                                       <p className="text-gray-300 text-sm">
                                         Loading translation...
                                       </p>
-                                    </div>
+                                  </div>
                                   ) : wordByWordData[verse.verse_key] &&
                                     wordByWordData[verse.verse_key][
                                       wordIndex
                                     ] ? (
-                                    <div>
-                                      {/* Header with Arabic Word */}
-                                      <div className="bg-gradient-to-r from-blue-900/60 to-indigo-900/60 p-6 text-center">
-                                        <div className="font-arabic text-5xl text-white mb-2 leading-relaxed">
+                                  <div>
+                                    {/* Header with Arabic Word */}
+                                    <div className="bg-gradient-to-r from-blue-900/60 to-indigo-900/60 p-6 text-center">
+                                      <div className="font-arabic text-5xl text-white mb-2 leading-relaxed">
                                           {
                                             wordByWordData[verse.verse_key][
                                               wordIndex
                                             ].text
                                           }
-                                        </div>
-                                        <div className="text-blue-200 font-medium tracking-wide text-sm">
+                                      </div>
+                                      <div className="text-blue-200 font-medium tracking-wide text-sm">
                                           {
                                             wordByWordData[verse.verse_key][
                                               wordIndex
                                             ].transliteration
                                           }
-                                        </div>
                                       </div>
-
-                                      {/* Content section */}
-                                      <div className="p-5">
-                                        {/* Part of speech pill */}
-                                        <div className="flex justify-center -mt-8 mb-4">
-                                          <span className="px-3 py-1 bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white rounded-full text-xs font-medium backdrop-blur-sm border border-blue-500/30 shadow-lg">
+                                    </div>
+                                    
+                                    {/* Content section */}
+                                    <div className="p-5">
+                                      {/* Part of speech pill */}
+                                      <div className="flex justify-center -mt-8 mb-4">
+                                        <span className="px-3 py-1 bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white rounded-full text-xs font-medium backdrop-blur-sm border border-blue-500/30 shadow-lg">
                                             {
                                               wordByWordData[verse.verse_key][
                                                 wordIndex
                                               ].part_of_speech
                                             }
-                                          </span>
-                                        </div>
-
-                                        {/* Translation box */}
-                                        <div className="bg-white/5 rounded-lg p-4 mb-3 backdrop-blur-sm">
+                                        </span>
+                                      </div>
+                                      
+                                      {/* Translation box */}
+                                      <div className="bg-white/5 rounded-lg p-4 mb-3 backdrop-blur-sm">
                                           <h3 className="text-xs uppercase text-blue-400/80 font-semibold mb-1 tracking-wider">
                                             Translation
                                           </h3>
-                                          <p className="text-gray-100 font-medium text-base">
+                                        <p className="text-gray-100 font-medium text-base">
                                             {
                                               wordByWordData[verse.verse_key][
                                                 wordIndex
                                               ].translation
                                             }
-                                          </p>
-                                        </div>
-
-                                        {/* Verse reference with icon */}
-                                        <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-3">
+                                        </p>
+                                      </div>
+                                      
+                                      {/* Verse reference with icon */}
+                                      <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-3">
                                           <svg
                                             xmlns="http://www.w3.org/2000/svg"
                                             width="12"
@@ -903,19 +903,19 @@ export default function SurahPageClient() {
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                           >
-                                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                                          </svg>
-                                          <span>
+                                          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                        </svg>
+                                        <span>
                                             Surah {surah?.name_simple} • Verse{" "}
                                             {verse.verse_number}
-                                          </span>
-                                        </div>
+                                        </span>
                                       </div>
                                     </div>
-                                  ) : (
-                                    <div className="text-center py-6 px-5">
-                                      <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-6 px-5">
+                                    <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
                                         <svg
                                           xmlns="http://www.w3.org/2000/svg"
                                           width="20"
@@ -945,30 +945,30 @@ export default function SurahPageClient() {
                                             x2="12.01"
                                             y2="16"
                                           ></line>
-                                        </svg>
-                                      </div>
+                                      </svg>
+                                    </div>
                                       <p className="text-gray-200 font-medium">
                                         Translation not available
                                       </p>
                                       <p className="text-xs text-gray-500 mt-1">
                                         Try reloading the page
                                       </p>
-                                    </div>
-                                  )}
-                                  <HoverCard.Arrow className="fill-slate-800" />
-                                </HoverCard.Content>
-                              </HoverCard.Portal>
-                            </HoverCard.Root>
-                          ))}
+                                  </div>
+                                )}
+                                <HoverCard.Arrow className="fill-slate-800" />
+                              </HoverCard.Content>
+                            </HoverCard.Portal>
+                          </HoverCard.Root>
+                        ))}
                       </p>
                     </motion.div>
-
-                    <motion.div
+                    
+                    <motion.div 
                       className="bg-white/5 backdrop-blur-sm rounded-xl p-4 transition-all duration-300"
                       initial={{ opacity: 0.8, y: 5 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      whileHover={{
+                      whileHover={{ 
                         backgroundColor: "rgba(255, 255, 255, 0.08)",
                         transition: { duration: 0.2 },
                       }}
@@ -977,13 +977,13 @@ export default function SurahPageClient() {
                         {verse.translations[0]?.text}
                       </p>
                     </motion.div>
-
+                    
                     {/* Verse actions toolbar */}
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-gray-500 font-medium">
                         {surah?.name_arabic} • آية {verse.verse_number}
                       </div>
-
+                      
                       <div className="flex items-center gap-2">
                         <HoverCard.Root>
                           <HoverCard.Trigger asChild>
@@ -1033,7 +1033,7 @@ export default function SurahPageClient() {
                             </HoverCard.Content>
                           </HoverCard.Portal>
                         </HoverCard.Root>
-
+                        
                         <HoverCard.Root>
                           <HoverCard.Trigger asChild>
                             <div>
@@ -1071,7 +1071,7 @@ export default function SurahPageClient() {
                             </HoverCard.Content>
                           </HoverCard.Portal>
                         </HoverCard.Root>
-
+                        
                         <HoverCard.Root>
                           <HoverCard.Trigger asChild>
                             <div>
@@ -1102,27 +1102,27 @@ export default function SurahPageClient() {
                         </HoverCard.Root>
                       </div>
                     </div>
-
+                    
                     {/* Share result message */}
                     {shareResult &&
                       index ===
                         verses.findIndex(
                           (v) => v.verse_key === verse.verse_key
                         ) && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className={cn(
-                            "mt-2 text-sm py-1 px-2 rounded text-center",
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className={cn(
+                          "mt-2 text-sm py-1 px-2 rounded text-center",
                             shareResult.success
                               ? "bg-green-500/20 text-green-400"
                               : "bg-red-500/20 text-red-400"
-                          )}
-                        >
-                          {shareResult.message}
-                        </motion.div>
-                      )}
+                        )}
+                      >
+                        {shareResult.message}
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1130,7 +1130,7 @@ export default function SurahPageClient() {
           ))}
         </div>
       </motion.div>
-
+      
       {/* Share Modal */}
       <ShareVerseModal
         isOpen={showShareModal}
@@ -1143,7 +1143,7 @@ export default function SurahPageClient() {
         capturedImage={capturedImage}
         shareResult={shareResult}
       />
-
+      
       {/* Audio Player - position as a fixed element at the bottom of the screen */}
       <AnimatePresence>
         {activeVerse !== null && (
@@ -1151,14 +1151,14 @@ export default function SurahPageClient() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
-            transition={{
-              type: "spring",
-              damping: 25,
+            transition={{ 
+              type: "spring", 
+              damping: 25, 
               stiffness: 200,
             }}
             className="fixed bottom-4 left-0 right-0 mx-auto max-w-4xl bg-gradient-to-r from-[#0F172A]/95 to-[#0D1423]/95 backdrop-blur-md border border-gray-800 rounded-xl shadow-xl z-40 w-[95%]"
           >
-            <motion.div
+            <motion.div 
               className="px-4 py-3"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1182,9 +1182,9 @@ export default function SurahPageClient() {
                   // Auto-play next verse option could be added here
                 }}
               />
-
+              
               <div className="flex items-center gap-4">
-                <motion.div
+                <motion.div 
                   className="hidden sm:flex items-center gap-3 text-gray-300 text-sm min-w-48"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -1198,8 +1198,8 @@ export default function SurahPageClient() {
                     {activeVerse !== null && verses[activeVerse]?.verse_number}
                   </span>
                 </motion.div>
-
-                <motion.div
+                
+                <motion.div 
                   className="flex items-center gap-2"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -1224,9 +1224,9 @@ export default function SurahPageClient() {
                       <SkipBack className="h-4 w-4" />
                     </Button>
                   </motion.div>
-
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
+                  
+                  <motion.div 
+                    whileHover={{ scale: 1.1 }} 
                     whileTap={{ scale: 0.9 }}
                     animate={
                       isPlaying
@@ -1235,12 +1235,12 @@ export default function SurahPageClient() {
                               "0 0 0 0 rgba(34, 197, 94, 0)",
                               "0 0 0 10px rgba(34, 197, 94, 0)",
                             ],
-                            transition: {
-                              duration: 2,
-                              repeat: Infinity,
+                      transition: { 
+                        duration: 2, 
+                        repeat: Infinity,
                               ease: "easeInOut",
                             },
-                          }
+                      }
                         : {}
                     }
                   >
@@ -1271,7 +1271,7 @@ export default function SurahPageClient() {
                       )}
                     </Button>
                   </motion.div>
-
+                  
                   <motion.div
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -1298,8 +1298,8 @@ export default function SurahPageClient() {
                     </Button>
                   </motion.div>
                 </motion.div>
-
-                <motion.div
+                
+                <motion.div 
                   className="flex-1 max-w-md"
                   initial={{ opacity: 0, scaleX: 0.9 }}
                   animate={{ opacity: 1, scaleX: 1 }}
@@ -1340,8 +1340,8 @@ export default function SurahPageClient() {
                     />
                   </div>
                 </motion.div>
-
-                <motion.div
+                
+                <motion.div 
                   className="hidden sm:flex items-center gap-2"
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -1369,7 +1369,7 @@ export default function SurahPageClient() {
                       )}
                     </Button>
                   </motion.div>
-
+                  
                   <motion.input
                     type="range"
                     min="0"
@@ -1388,8 +1388,8 @@ export default function SurahPageClient() {
                     whileHover={{ scale: 1.05 }}
                   />
                 </motion.div>
-
-                <motion.div
+                
+                <motion.div 
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 }}
@@ -1419,4 +1419,4 @@ export default function SurahPageClient() {
       </AnimatePresence>
     </motion.div>
   );
-}
+} 
